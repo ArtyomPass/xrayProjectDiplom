@@ -1,0 +1,80 @@
+/* Sidebar Styles */
+.sidebar {
+    -fx-background-color: #333; /* Dark color for modern look */
+    -fx-padding: 10px;
+    -fx-spacing: 10px; /* Reduced space between buttons for compact look */
+}
+
+/* Menu Button Styles */
+.menu-button {
+    -fx-background-color: #555; /* Sleek button color */
+    -fx-text-fill: white;
+    -fx-font-size: 12px; /* Smaller font for a compact look */
+    -fx-padding: 8px 10px; /* Smaller padding */
+    -fx-max-width: Infinity;
+    -fx-background-radius: 3px;
+}
+
+.menu-button:hover {
+    -fx-background-color: #666; /* Hover effect */
+}
+
+.menu-button:pressed {
+    -fx-background-color: #2C373F; /* Even darker for pressed state */
+    -fx-effect: innershadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 0, 0);
+}
+
+
+
+
+
+
+/* General TabPane Styles */
+.tab-pane {
+    -fx-tab-min-width: 120px;
+    -fx-tab-max-width: 120px;
+    -fx-tab-min-height: 25px;
+    -fx-tab-max-height: 25px;
+}
+
+/* Tab Header Background */
+.tab-pane .tab-header-background {
+    -fx-background-color: #666;
+}
+
+/* Unselected Tabs */
+.tab-pane .tab {
+    -fx-background-color: #888;
+    -fx-padding: 3px 10px;
+    -fx-font-size: 13px;
+    -fx-text-fill: #E0E0E0;
+    -fx-font-weight: normal;
+    -fx-close-button-visible: true; /* Show close button */
+}
+
+/* Selected Tab */
+.tab-pane .tab:selected {
+    -fx-background-color: #999;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F5F5F5;
+}
+
+/* Hover Effect on Tabs */
+.tab-pane .tab:hover {
+    -fx-background-color: #999;
+}
+
+/* Tab Close Button Styles */
+.tab-pane .tab .tab-close-button {
+    -fx-padding: 0;
+    -fx-cursor: hand; /* Cursor changes to hand when hovering over the close button */
+}
+
+.tab-pane .tab .tab-close-button:hover {
+    -fx-background-color: #AAA; /* Background color change on hover */
+}
+
+/* Tab Content Area Styles */
+.tab-content-area {
+    -fx-background-color: #D8D8D8;
+}
