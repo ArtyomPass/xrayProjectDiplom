@@ -3,6 +3,7 @@ package com.example.funproject;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -28,10 +29,14 @@ public class FileImporter {
                     Image image = new Image(fileInputStream);
                     images.add(image);
                 } catch (FileNotFoundException e) {
-                    e.printStackTrace(); // Handle the exception as appropriate
+                    e.printStackTrace();
                 }
             }
         }
+
         return images;
     }
+
+
+
 }

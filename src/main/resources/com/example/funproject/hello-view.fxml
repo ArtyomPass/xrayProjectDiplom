@@ -3,14 +3,19 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.ImageView?>
 
-<BorderPane fx:id="mainContainer" xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.funproject.HelloController" stylesheets="@style.css">
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<BorderPane fx:id="mainContainer" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.funproject.HelloController" stylesheets="@style.css">
     <!-- Sidebar Menu on the left side -->
     <left>
         <VBox fx:id="sidebar" spacing="10" styleClass="sidebar">
             <!-- Core Functionalities -->
             <Button text="New Tab" styleClass="menu-button" maxWidth="Infinity" onAction="#handleNewTab"/>
-            <Button text="Import X-ray Image" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImportXRayImage"/>
-            <Button text="Data Preprocessing" styleClass="menu-button" maxWidth="Infinity"/>
+            <Button text="Import X-ray Image" styleClass="menu-button" maxWidth="Infinity"
+                    onAction="#handleImportXRayImage"/>
+            <Button text="Data Preprocessing" styleClass="menu-button" maxWidth="Infinity"
+                    onAction="#handleDataPreprocessing"/>
             <Button text="Peak Analysis" styleClass="menu-button" maxWidth="Infinity"/>
             <Button text="Quantitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
             <Button text="Qualitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
@@ -28,14 +33,43 @@
     <!-- Main Content Area -->
     <center>
         <TabPane fx:id="tabPane" style="-fx-border-color: red; -fx-border-width: 5px;">
-            <!-- Initial Tab -->
             <Tab text="Tab 1">
-                <StackPane styleClass="tab-content-area " style="-fx-border-color: green; -fx-border-width: 10px;">
-                    <ImageView fx:id="imageView"
-                               fitWidth="200" fitHeight="200"/>
-                </StackPane>
+                <SplitPane orientation="VERTICAL" fx:id="mainSplitPane" dividerPositions="0.5">
+                    <!-- Adjusted Component: SplitPane for Data Table and Spectrum Chart -->
+                    <SplitPane orientation="HORIZONTAL" fx:id="dataChartSplitPane" dividerPositions="0.3">
+                        <!-- Data Table -->
+                        <TableView fx:id="dataTable">
+                            <!-- Define Table Columns here -->
+                        </TableView>
+                        <!-- Spectrum Chart -->
+                        <LineChart fx:id="spectrumChart" animated="false">
+                            <xAxis>
+                                <NumberAxis fx:id="xAxis" label="Channel"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis fx:id="yAxis" label="Intensity"/>
+                            </yAxis>
+                        </LineChart>
+                    </SplitPane>
+                    <!-- Bottom Component: ImageView in a ScrollPane -->
+                    <ScrollPane fitToWidth="true" fitToHeight="true">
+                        <content>
+                            <ImageView fx:id="xrayImageView" preserveRatio="true" smooth="true"/>
+                        </content>
+                    </ScrollPane>
+                </SplitPane>
             </Tab>
+
+            <!-- Additional tabs can be added here -->
         </TabPane>
     </center>
 
+
+    <!-- Status Bar at the bottom -->
+    <bottom>
+        <HBox>
+            <Label text="Status: Ready"/>
+            <!-- Additional status indicators can be added here -->
+        </HBox>
+    </bottom>
 </BorderPane>
