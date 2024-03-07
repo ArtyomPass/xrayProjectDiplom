@@ -19,7 +19,7 @@
             <Button text="Peak Analysis" styleClass="menu-button" maxWidth="Infinity"/>
             <Button text="Quantitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
             <Button text="Qualitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button text="Spectra Visualization" styleClass="menu-button" maxWidth="Infinity"/>
+            <Button text="Spectra Visualization" styleClass="menu-button" maxWidth="Infinity" onAction="#spectraVisualization"/>
             <Button text="Export/Save Data" styleClass="menu-button" maxWidth="Infinity"/>
 
             <!-- Additional Functionalities -->

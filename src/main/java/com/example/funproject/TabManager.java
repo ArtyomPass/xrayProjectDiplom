@@ -11,11 +11,11 @@ import javafx.scene.layout.VBox;
 public class TabManager{
 
     private final TabPane tabPane;
-    private final ImageProcessor imageProcessor;
 
-    public TabManager(TabPane tabPane, ImageProcessor imageProcessor){
+
+    public TabManager(TabPane tabPane){
         this.tabPane = tabPane;
-        this.imageProcessor = imageProcessor;
+
     }
 
     public void createNewTab(String title){

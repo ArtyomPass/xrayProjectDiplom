@@ -25,7 +25,7 @@ public class ImageProcessor {
         System.out.println("Image processor is initialized");
     }
 
-    public void makeDraggable(ImageView imageView) {
+    private void makeDraggable(ImageView imageView) {
         imageView.setOnMousePressed(this::onMousePressed);
         imageView.setOnMouseDragged(this::onMouseDragged);
     }
@@ -39,6 +39,7 @@ public class ImageProcessor {
                 if (scrollPane.getContent() instanceof ImageView) {
                     ImageView imageView = (ImageView) scrollPane.getContent();
                     makeDraggable(imageView);
+
                     images.get(currentTab).forEach(imageView::setImage); // Assuming one image for simplicity
                 }
             }
