@@ -66,16 +66,7 @@ public class HelloController {
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
         List<Image> images = xRayImages.get(currentTab);
-
-        LineChart<Number, Number> chart = spectraAnalysis.getLineChartFromTab(currentTab);
-        XYChart.Series<Number, Number> series = spectraAnalysis.processImageForPeaks(images.get(0));
-
-        if (chart != null) {
-            chart.getData().clear();
-            chart.getData().add(series);
-            spectralDataSeries.put(currentTab, series);
-        }
-
+        spectralDataSeries.put(currentTab, spectraAnalysis.updateChartWithPeaks(currentTab, images.get(0)));
     }
 }
 

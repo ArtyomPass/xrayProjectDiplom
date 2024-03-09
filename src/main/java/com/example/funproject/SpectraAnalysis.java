@@ -16,10 +16,14 @@ public class SpectraAnalysis {
 
     public LineChart<Number, Number> getLineChartFromTab(Tab tab) {
         if (tab.getContent() instanceof SplitPane) {
-            SplitPane mainSplitPane = (SplitPane) ((SplitPane) tab.getContent()).getItems().get(0);
-            for (Node node : mainSplitPane.getItems()) {
-                if (node instanceof LineChart) {
-                    return (LineChart<Number, Number>) node;
+            SplitPane splitPane = (SplitPane) tab.getContent();
+            for (Node item : splitPane.getItems()) {
+                if (item instanceof SplitPane) {
+                    for (Node innerItem : ((SplitPane) item).getItems()) {
+                        if (innerItem instanceof LineChart) {
+                            return (LineChart<Number, Number>) innerItem;
+                        }
+                    }
                 }
             }
         }
@@ -42,8 +46,17 @@ public class SpectraAnalysis {
                 series.getData().add(new XYChart.Data<>(x, intensity * 100));
             }
         }
+        return series;
+    }
 
-
+    public XYChart.Series<Number, Number> updateChartWithPeaks(Tab tab, Image image) {
+        LineChart<Number, Number> chart = getLineChartFromTab(tab);
+        XYChart.Series<Number, Number> series = null;
+        if (chart != null && image != null) {
+            series = processImageForPeaks(image);
+            chart.getData().clear();
+            chart.getData().add(series);
+        }
         return series;
     }
 
