@@ -2,7 +2,6 @@ package com.example.funproject;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -30,9 +29,11 @@ public class HelloController {
     private TabManager tabManager;
     private DataPreprocessing dataPreprocessing;
     private SpectraAnalysis spectraAnalysis;
+    private SpectralDataTable spectralDataTable;
 
     private Map<Tab, List<Image>> xRayImages = new HashMap<>();
     private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>();
+    private Map<Tab, SpectralDataTable> tabSpectralDataTables = new HashMap<>();
 
 
     @FXML
@@ -42,6 +43,7 @@ public class HelloController {
         dataPreprocessing = new DataPreprocessing();
         spectraAnalysis = new SpectraAnalysis();
         System.out.println("The program is started, ready to work");
+        handleNewTab();
     }
 
     @FXML
@@ -66,7 +68,17 @@ public class HelloController {
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
         List<Image> images = xRayImages.get(currentTab);
-        spectralDataSeries.put(currentTab, spectraAnalysis.updateChartWithPeaks(currentTab, images.get(0)));
+        XYChart.Series<Number, Number> series = spectraAnalysis.updateChartWithSplineData(currentTab, images.get(0));
+        spectralDataSeries.put(currentTab, series);
+        List<XYChart.Data<Number, Number>> seriesData = new ArrayList<>(series.getData());
+        SpectralDataTable.updateTableViewInTab(currentTab, seriesData);
+    }
+
+    public void peakAnalysis(ActionEvent actionEvent) {
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        double threshold = 20.1; // Adjust as needed
+        XYChart.Series<Number, Number> series = spectralDataSeries.get(currentTab);
+        spectraAnalysis.visualizePeaks(currentTab, series, threshold);
     }
 }
 
