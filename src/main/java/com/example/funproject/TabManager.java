@@ -1,10 +1,12 @@
 package com.example.funproject;
 
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.TilePane;
 
 public class TabManager {
 
@@ -21,41 +23,63 @@ public class TabManager {
     }
 
     private SplitPane createTabContent() {
-        // Create and initialize SpectralDataTable
+        // Инициализация TableView для отображения данных
         SpectralDataTable spectralDataTable = new SpectralDataTable();
-        TableView tableView = spectralDataTable.getTableView(); // Get the TableView
+        TableView<SpectralDataTable.SpectralData> tableView = spectralDataTable.getTableView();
 
-        // Set column resize policy to constrained resize
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         NumberAxis xAxis = new NumberAxis();
         xAxis.setLabel("Channel");
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("Intensity");
-
-        // Create LineChart with spline interpolation
         LineChart<Number, Number> spectrumChart = new LineChart<>(xAxis, yAxis);
-        spectrumChart.setCreateSymbols(false); // Disable data markers (dots)
-        spectrumChart.setAlternativeRowFillVisible(false); // Optional: remove alternating row fills
+        spectrumChart.setCreateSymbols(false);
+        spectrumChart.setLegendVisible(false);
 
-        SplitPane dataChartSplitPane = new SplitPane();
-        dataChartSplitPane.setOrientation(Orientation.HORIZONTAL);
-        dataChartSplitPane.getItems().addAll(tableView, spectrumChart);
-        dataChartSplitPane.setDividerPositions(0.3);
+        // Горизонтальный SplitPane для TableView и LineChart
+        SplitPane dataTableChartSplitPane = new SplitPane();
+        dataTableChartSplitPane.setOrientation(Orientation.HORIZONTAL);
+        dataTableChartSplitPane.getItems().addAll(tableView, spectrumChart);
+        dataTableChartSplitPane.setDividerPositions(0.5);
 
-        ImageView xrayImageView = new ImageView();
-        xrayImageView.setPreserveRatio(true);
-        xrayImageView.setSmooth(true);
+        // Инициализация ImageView для основного изображения
+        ImageView mainImageView = new ImageView();
+        mainImageView.setPreserveRatio(true);
 
-        ScrollPane imageViewScrollPane = new ScrollPane(xrayImageView);
-        imageViewScrollPane.setFitToWidth(true);
-        imageViewScrollPane.setFitToHeight(true);
+        // Настройка ScrollPane для основного ImageView
+        ScrollPane mainImageScrollPane = new ScrollPane(mainImageView);
+        mainImageScrollPane.setFitToWidth(true);
+        mainImageScrollPane.setFitToHeight(true);
+        mainImageScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        mainImageScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
+        // Инициализация TilePane для миниатюр изображений
+        TilePane thumbnailsTilePane = new TilePane();
+        thumbnailsTilePane.setPrefColumns(1); // Установка количества колонок для миниатюр
+        thumbnailsTilePane.setPadding(new Insets(5)); // Небольшой отступ
+        thumbnailsTilePane.setVgap(5); // Вертикальный отступ между миниатюрами
+
+        // Настройка ScrollPane для миниатюр
+        ScrollPane thumbnailsScrollPane = new ScrollPane(thumbnailsTilePane);
+        thumbnailsScrollPane.setFitToWidth(true);
+        thumbnailsScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        thumbnailsScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        // Горизонтальный SplitPane для основного изображения и миниатюр
+        SplitPane imageAndThumbnailsSplitPane = new SplitPane();
+        imageAndThumbnailsSplitPane.setOrientation(Orientation.HORIZONTAL);
+        imageAndThumbnailsSplitPane.getItems().addAll(mainImageScrollPane, thumbnailsScrollPane);
+        imageAndThumbnailsSplitPane.setDividerPositions(0.75);
+
+        // Общий вертикальный SplitPane для всего содержимого вкладки
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(Orientation.VERTICAL);
-        mainSplitPane.getItems().addAll(dataChartSplitPane, imageViewScrollPane);
+        mainSplitPane.getItems().addAll(dataTableChartSplitPane, imageAndThumbnailsSplitPane);
         mainSplitPane.setDividerPositions(0.5);
 
         return mainSplitPane;
     }
+
+
 }

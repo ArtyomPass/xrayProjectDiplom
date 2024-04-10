@@ -19,6 +19,39 @@ public class SpectraAnalysis {
         // Empty
     }
 
+    public List<XYChart.Data<Number, Number>> visualizePeaks(Tab tab, XYChart.Series<Number, Number> series, double threshold, int windowSize, double minPeakDistance) {
+        LineChart<Number, Number> chart = getLineChartFromTab(tab);
+        List<XYChart.Data<Number, Number>> detectedPeaks = new ArrayList<>();
+
+        if (chart != null && series != null) {
+            detectedPeaks = detectPeaks(series, threshold, windowSize, minPeakDistance);
+            for (XYChart.Data<Number, Number> peak : detectedPeaks) {
+                XYChart.Series<Number, Number> peakSeries = new XYChart.Series<>();
+                peakSeries.getData().add(new XYChart.Data<>(peak.getXValue(), peak.getYValue()));
+
+                Node peakNode = new Circle(4);
+                peakNode.setStyle("-fx-fill: red;");
+                peakSeries.getData().get(0).setNode(peakNode);
+                chart.getData().add(peakSeries);
+
+                chart.setLegendVisible(false);
+                chart.setCreateSymbols(false);
+            }
+        }
+        return detectedPeaks;
+    }
+
+    public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab, Image image) {
+        LineChart<Number, Number> chart = getLineChartFromTab(tab);
+        XYChart.Series<Number, Number> series = null;
+        if (chart != null && image != null) {
+            series = processImageForSplineData(image);
+            chart.getData().clear();
+            chart.getData().add(series);
+        }
+        return series;
+    }
+
     private LineChart<Number, Number> getLineChartFromTab(Tab tab) {
         if (tab.getContent() instanceof SplitPane) {
             SplitPane splitPane = (SplitPane) tab.getContent();
@@ -35,66 +68,54 @@ public class SpectraAnalysis {
         return null;
     }
 
-    public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab, Image image) {
-        LineChart<Number, Number> chart = getLineChartFromTab(tab);
-        XYChart.Series<Number, Number> series = null;
-        if (chart != null && image != null) {
-            series = processImageForPeaks(image);
-            chart.getData().clear();
-            chart.getData().add(series);
-        }
-        return series;
-    }
-
-    private XYChart.Series<Number, Number> processImageForPeaks(Image image) {
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Peak Intensities");
-        if (image != null && image.getPixelReader() != null) {
-            PixelReader pixelReader = image.getPixelReader();
-            int width = (int) image.getWidth();
-            int height = (int) image.getHeight();
-            int rowToProcess = height / 2;
-            for (int x = 0; x < width; x++) {
-                Color color = pixelReader.getColor(x, rowToProcess);
-                double intensity = (color.getRed() + color.getGreen() + color.getBlue()) / 3.0;
-                series.getData().add(new XYChart.Data<>(x, intensity * 100));
-            }
-        }
-        return series;
-    }
-
-    public void visualizePeaks(Tab tab, XYChart.Series<Number, Number> series, double threshold) {
-        LineChart<Number, Number> chart = getLineChartFromTab(tab);
-        if (chart != null && series != null) {
-            List<XYChart.Data<Number, Number>> peaks = detectPeaks(series, threshold);
-            for (XYChart.Data<Number, Number> peak : peaks) {
-                XYChart.Series<Number, Number> peakSeries = new XYChart.Series<>();
-                peakSeries.getData().add(new XYChart.Data<>(peak.getXValue(), peak.getYValue()));
-
-                Node peakNode = new Circle(4);
-                peakNode.setStyle("-fx-fill: red;");
-                peakSeries.getData().get(0).setNode(peakNode);
-                chart.getData().add(peakSeries);
-
-                chart.setLegendVisible(false);
-                chart.setCreateSymbols(false);
-            }
-        }
-    }
-
-    private List<XYChart.Data<Number, Number>> detectPeaks(XYChart.Series<Number, Number> series, double threshold) {
+    private List<XYChart.Data<Number, Number>> detectPeaks(XYChart.Series<Number, Number> series,
+                                                           double threshold, int windowSize, double minPeakDistance) {
         List<XYChart.Data<Number, Number>> peaks = new ArrayList<>();
-        for (int i = 10; i < series.getData().size() - 10; i++) {
+        double lastPeakX = Double.MIN_VALUE;
+
+        for (int i = windowSize; i < series.getData().size() - windowSize; i++) {
             XYChart.Data<Number, Number> current = series.getData().get(i);
-            XYChart.Data<Number, Number> previous = series.getData().get(i - 10);
-            XYChart.Data<Number, Number> next = series.getData().get(i + 10);
-            if (current.getYValue().doubleValue() > threshold &&
-                    current.getYValue().doubleValue() > previous.getYValue().doubleValue() &&
-                    current.getYValue().doubleValue() > next.getYValue().doubleValue()) {
+            boolean isPeak = true;
+
+            for (int j = -windowSize; j <= windowSize; j++) {
+                if (j == 0) continue;
+                XYChart.Data<Number, Number> neighbor = series.getData().get(i + j);
+                if (current.getYValue().doubleValue() <= neighbor.getYValue().doubleValue()) {
+                    isPeak = false;
+                    break;
+                }
+            }
+
+            if (isPeak && current.getYValue().doubleValue() > threshold && (current.getXValue().doubleValue() - lastPeakX) >= minPeakDistance) {
                 peaks.add(current);
+                lastPeakX = current.getXValue().doubleValue();
             }
         }
         return peaks;
     }
+
+
+    private XYChart.Series<Number, Number> processImageForSplineData(Image image) {
+        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+        series.setName("Intensities");
+        if (image != null && image.getPixelReader() != null) {
+            PixelReader pixelReader = image.getPixelReader();
+            int width = (int) image.getWidth();
+            int height = (int) image.getHeight();
+
+            for (int x = 0; x < width; x++) {
+                double totalIntensity = 0;
+                for (int y = 0; y < height; y++) {
+                    Color color = pixelReader.getColor(x, y);
+                    double intensity = (color.getRed() + color.getGreen() + color.getBlue()) / 3.0;
+                    totalIntensity += intensity;
+                }
+                double averageIntensity = totalIntensity / height;
+                series.getData().add(new XYChart.Data<>(x, averageIntensity * 100));
+            }
+        }
+        return series;
+    }
+
 
 }

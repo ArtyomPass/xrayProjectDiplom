@@ -14,18 +14,18 @@
             <Button text="New Tab" styleClass="menu-button" maxWidth="Infinity" onAction="#handleNewTab"/>
             <Button text="Import X-ray Image" styleClass="menu-button" maxWidth="Infinity"
                     onAction="#handleImportXRayImage"/>
-            <Button text="Data Preprocessing" styleClass="menu-button" maxWidth="Infinity"
-                    onAction="#handleDataPreprocessing"/>
+            <Button text="Smooth Image" styleClass="menu-button" maxWidth="Infinity"
+                    onAction="#handleImageSmoothing"/>
+            <Button text="Spectra Visualization" styleClass="menu-button" maxWidth="Infinity"
+                    onAction="#spectraVisualization"/>
             <Button text="Peak Analysis" styleClass="menu-button" maxWidth="Infinity" onAction="#peakAnalysis"/>
             <Button text="Quantitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
             <Button text="Qualitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button text="Spectra Visualization" styleClass="menu-button" maxWidth="Infinity"
-                    onAction="#spectraVisualization"/>
             <Button text="Export/Save Data" styleClass="menu-button" maxWidth="Infinity"/>
 
             <!-- Additional Functionalities -->
             <Separator/>
-            <Button text="Instrument Calibration" styleClass="menu-button" maxWidth="Infinity"/>
+            <Button fx:id="spectrumCalibration" text="Instrument Calibration" styleClass="menu-button" maxWidth="Infinity" onAction="#spectrumCalibration"/>
             <Button text="User Preferences" styleClass="menu-button" maxWidth="Infinity"/>
             <Button text="Help/Documentation" styleClass="menu-button" maxWidth="Infinity"/>
         </VBox>

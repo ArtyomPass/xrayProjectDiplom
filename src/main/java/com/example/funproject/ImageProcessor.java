@@ -1,72 +1,98 @@
 package com.example.funproject;
 
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ImageProcessor {
 
-    private double initialMouseX;
-    private double initialMouseY;
+    private final HelloController controller;
+    protected ImageView getImageView;
+    protected Image selectedImage;
+    private ImageView selectedThumbnailView;
 
-    public ImageProcessor() {
-        System.out.println("Image processor is initialized");
+    public ImageProcessor(HelloController controller) {
+        this.controller = controller;
+        System.out.println("Image processor is initialized" + this.controller);
     }
 
-    private void makeDraggable(ImageView imageView) {
-        imageView.setOnMousePressed(this::onMousePressed);
-        imageView.setOnMouseDragged(this::onMouseDragged);
-    }
+    public void putImagesOnTabPane(Map<Tab, List<Image>> images, Tab currentTab) {
 
-    public void putImagesOnTabPane(Map<Tab, List<Image>> images, TabPane tabPane) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if (currentTab != null && currentTab.getContent() instanceof SplitPane) {
-            SplitPane splitPane = (SplitPane) currentTab.getContent();
-            if (splitPane.getItems().size() > 1 && splitPane.getItems().get(1) instanceof ScrollPane) {
-                ScrollPane scrollPane = (ScrollPane) splitPane.getItems().get(1);
-                if (scrollPane.getContent() instanceof ImageView) {
-                    ImageView imageView = (ImageView) scrollPane.getContent();
-                    makeDraggable(imageView);
+        if (currentTab != null && currentTab.getContent() instanceof SplitPane mainSplitPane) {
 
-                    images.get(currentTab).forEach(imageView::setImage); // Assuming one image for simplicity
-                }
+            ScrollPane thumbnailsScrollPane = (ScrollPane) ((SplitPane) mainSplitPane.getItems().get(1)).getItems().get(1);
+            TilePane thumbnailsTilePane = (TilePane) thumbnailsScrollPane.getContent();
+            thumbnailsTilePane.getChildren().clear(); // Очистка предыдущих миниатюр
+
+            thumbnailsTilePane.setPrefColumns(1);
+            thumbnailsTilePane.setVgap(10);
+            thumbnailsTilePane.setHgap(10);
+
+            ScrollPane mainImageScrollPane = (ScrollPane) ((SplitPane) mainSplitPane.getItems().get(1)).getItems().get(0);
+            // Поскольку mainImageView является единственным содержимым mainImageScrollPane, мы можем получить к нему доступ напрямую.
+            ImageView mainImageView = (ImageView) mainImageScrollPane.getContent();
+            this.getImageView = mainImageView;
+            System.out.println(mainImageView);
+
+            List<Image> tabImages = images.getOrDefault(currentTab, new ArrayList<>());
+            for (Image img : tabImages) {
+                ImageView thumbnailImageView = new ImageView(img);
+                thumbnailImageView.setFitWidth(150);
+                thumbnailImageView.setFitHeight(150);
+                thumbnailImageView.setPreserveRatio(true);
+
+                thumbnailImageView.setOnMouseClicked(event -> {
+                    mainImageView.setImage(img);
+                    selectedImage = img;
+                    clearSelectedImage();
+                    applySelectedEffect(thumbnailImageView);
+                    this.selectedThumbnailView = thumbnailImageView;
+                });
+
+                Button deleteButton = new Button("\u274C");
+                deleteButton.getStyleClass().add("button-delete");
+                deleteButton.setOnAction(event -> {
+                    List<Image> imageList = controller.xRayImages.get(currentTab);
+                    if (imageList != null) {
+                        imageList.remove(img);
+                        mainImageView.setImage(null);
+                        controller.xRayImages.put(currentTab, imageList);
+                    }
+                    putImagesOnTabPane(controller.xRayImages, currentTab);
+                });
+                deleteButton.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
+                deleteButton.setMaxSize(20, 20);
+                HBox hbox = new HBox(10); // 10 is space between elements in HBox
+                hbox.setAlignment(Pos.CENTER_LEFT);
+                hbox.getChildren().addAll(thumbnailImageView, deleteButton);
+                thumbnailsTilePane.getChildren().add(hbox);
             }
         }
     }
 
-    private void onMousePressed(MouseEvent event) {
-        // Record initial mouse positions
-        initialMouseX = event.getSceneX();
-        initialMouseY = event.getSceneY();
-
-        ImageView imageView = (ImageView) event.getSource();
+    // To apply DropShadow Effect
+    private void applySelectedEffect(ImageView imageView) {
+        DropShadow dropShadow = new DropShadow();
+        dropShadow.setColor(Color.GREY);
+        dropShadow.setRadius(20);
+        dropShadow.setSpread(0.7);
+        imageView.setEffect(dropShadow);
     }
 
-    private void onMouseDragged(MouseEvent event) {
-        ImageView imageView = (ImageView) event.getSource();
-
-        // Calculate new position
-        double deltaX = event.getSceneX() - initialMouseX;
-        double deltaY = event.getSceneY() - initialMouseY;
-
-        // Update the image's position
-        imageView.setTranslateX(imageView.getTranslateX() + deltaX);
-        imageView.setTranslateY(imageView.getTranslateY() + deltaY);
-
-        // Update initial positions for next calculation
-        initialMouseX = event.getSceneX();
-        initialMouseY = event.getSceneY();
+    private void clearSelectedImage() {
+        if (selectedThumbnailView != null) {
+            selectedThumbnailView.setEffect(null);
+        }
     }
+
 }
