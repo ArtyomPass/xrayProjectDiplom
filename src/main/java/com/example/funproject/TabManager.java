@@ -41,7 +41,7 @@ public class TabManager {
         SplitPane dataTableChartSplitPane = new SplitPane();
         dataTableChartSplitPane.setOrientation(Orientation.HORIZONTAL);
         dataTableChartSplitPane.getItems().addAll(tableView, spectrumChart);
-        dataTableChartSplitPane.setDividerPositions(0.5);
+        dataTableChartSplitPane.setDividerPositions(0.25);
 
         // Инициализация ImageView для основного изображения
         ImageView mainImageView = new ImageView();
@@ -70,7 +70,7 @@ public class TabManager {
         SplitPane imageAndThumbnailsSplitPane = new SplitPane();
         imageAndThumbnailsSplitPane.setOrientation(Orientation.HORIZONTAL);
         imageAndThumbnailsSplitPane.getItems().addAll(mainImageScrollPane, thumbnailsScrollPane);
-        imageAndThumbnailsSplitPane.setDividerPositions(0.75);
+        imageAndThumbnailsSplitPane.setDividerPositions(0.8);
 
         // Общий вертикальный SplitPane для всего содержимого вкладки
         SplitPane mainSplitPane = new SplitPane();

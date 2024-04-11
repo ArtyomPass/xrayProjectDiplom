@@ -8,6 +8,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,95 +16,137 @@ import java.util.Map;
 
 public class ImageProcessor {
 
-    private final HelloController controller; // Ссылка на контроллер, используется для получения доступа к переменным контроллера
-    protected ImageView getImageView; // ImageView для отображения обрабатываемого изображения.
-    protected Image selectedImage; // Текущее выбранное изображение.
-    private ImageView selectedThumbnailView; // ImageView для отслеживания применения эффекта DropShadow к выбранному миниатюрному изображению.
-    private final Map<Image, double[]> imageViewStates = new HashMap<>(); // Состояния масштабирования и позиции для каждого изображения.
+    private final HelloController controller; // Ссылка на контроллер для доступа к его переменным
+    protected ImageView getImageView; // ImageView для отображения обрабатываемого изображения
+    protected Image selectedImage; // Текущее выбранное изображение
+    private ImageView selectedThumbnailView; // ImageView для отслеживания эффекта DropShadow на миниатюре
 
-    /**
-     * Конструктор класса ImageProcessor.
-     *
-     * @param controller Контроллер приложения, через который осуществляется доступ к данным.
-     */
+    // Сохраняем состояния масштабирования и позиции для каждого изображения (масштаб X, масштаб Y, сдвиг X, сдвиг Y)
+    private final Map<Image, double[]> imageViewStates = new HashMap<>();
+
     public ImageProcessor(HelloController controller) {
         this.controller = controller;
         System.out.println("Image processor is initialized" + this.controller);
     }
 
     /**
-     * Размещает изображения на панели вкладок.
+     * Размещает изображения на вкладке.
      *
-     * @param images Словарь, связывающий каждую вкладку с списком изображений для отображения.
-     * @param currentTab Текущая вкладка, на которой будут отображаться изображения.
+     * @param images     - карта, где ключ - вкладка, значение - список изображений для этой вкладки
+     * @param currentTab - текущая активная вкладка
      */
     public void putImagesOnTabPane(Map<Tab, List<Image>> images, Tab currentTab) {
         if (currentTab != null && currentTab.getContent() instanceof SplitPane mainSplitPane) {
-            ScrollPane thumbnailsScrollPane = (ScrollPane) ((SplitPane) mainSplitPane.getItems().get(1)).getItems().get(1);
-            TilePane thumbnailsTilePane = (TilePane) thumbnailsScrollPane.getContent();
+            // 1. Получаем элементы интерфейса
+            ScrollPane thumbnailsScrollPane = (ScrollPane) ((SplitPane) mainSplitPane.getItems().get(1)).getItems().get(1); // Панель с миниатюрами
+            TilePane thumbnailsTilePane = (TilePane) thumbnailsScrollPane.getContent(); // Контейнер для миниатюр
+            ScrollPane mainImageScrollPane = (ScrollPane) ((SplitPane) mainSplitPane.getItems().get(1)).getItems().get(0); // Панель с основным изображением
+            ImageView mainImageView = (ImageView) mainImageScrollPane.getContent(); // ImageView для основного изображения
+            this.getImageView = mainImageView; // Сохраняем ссылку на ImageView
 
-            thumbnailsTilePane.getChildren().clear(); // Clearing previous thumbnails
-            thumbnailsTilePane.setPrefColumns(1);
-            thumbnailsTilePane.setVgap(10);
-            thumbnailsTilePane.setHgap(10);
+            // 2. Очищаем панель с миниатюрами и настраиваем ее
+            thumbnailsTilePane.getChildren().clear();
+            thumbnailsTilePane.setPrefColumns(1); // Одна колонка
+            thumbnailsTilePane.setVgap(10); // Вертикальный отступ
+            thumbnailsTilePane.setHgap(10); // Горизонтальный отступ
 
-            ScrollPane mainImageScrollPane = (ScrollPane) ((SplitPane) mainSplitPane.getItems().get(1)).getItems().get(0);
-            ImageView mainImageView = (ImageView) mainImageScrollPane.getContent();
-            this.getImageView = mainImageView; // Ensure this.getImageView is always the current ImageView
-
-            List<Image> tabImages = images.getOrDefault(currentTab, new ArrayList<>());
+            // 3. Обрабатываем изображения и создаем миниатюры
+            List<Image> tabImages = images.getOrDefault(currentTab, new ArrayList<>()); // Получаем список изображений для вкладки
             for (Image img : tabImages) {
+                // Сохраняем начальное состояние для изображения, если его еще нет
                 imageViewStates.putIfAbsent(img, new double[]{1.0, 1.0, 0.0, 0.0});
-                ImageView thumbnailImageView = new ImageView(img);
-                thumbnailImageView.setFitWidth(150);
-                thumbnailImageView.setFitHeight(150);
-                thumbnailImageView.setPreserveRatio(true);
 
+                ImageView thumbnailImageView = new ImageView(img); // Создаем ImageView для миниатюры
+                thumbnailImageView.setFitWidth(150); // Ширина миниатюры
+                thumbnailImageView.setFitHeight(150); // Высота миниатюры
+                thumbnailImageView.setPreserveRatio(true); // Сохраняем пропорции
+
+                // Обработчик клика по миниатюре
                 thumbnailImageView.setOnMouseClicked(event -> {
-                    double[] state = imageViewStates.getOrDefault(img, new double[]{1.0, 1.0, 0.0, 0.0}); // Получаем состояние для img
-                    getImageView.setScaleX(state[0]);
-                    getImageView.setScaleY(state[1]);
-                    getImageView.setTranslateX(state[2]);
-                    getImageView.setTranslateY(state[3]);
-
-                    getImageView.setImage(img); // Установка выбранного изображения
-                    selectedImage = img; // Обновление текущего выбранного изображения
-                    clearSelectedImage(); // Очистка эффекта для предыдущего выбранного миниатюрного изображения
-                    applySelectedEffect(thumbnailImageView); // Применение эффекта к текущему выбранному миниатюрному изображению
-                    this.selectedThumbnailView = thumbnailImageView; // Обновление ссылки на текущее выбранное миниатюрное изображение
+                    handleThumbnailClick(img, thumbnailImageView);
                 });
 
-
-                Button deleteButton = new Button("\u274C");
-                deleteButton.getStyleClass().add("button-delete");
-                deleteButton.setOnAction(event -> {
-                    List<Image> imageList = controller.xRayImages.get(currentTab);
-                    if (imageList != null) {
-                        imageList.remove(img);
-                        this.getImageView.setImage(null);
-                        controller.xRayImages.put(currentTab, imageList);
-                    }
-                    putImagesOnTabPane(controller.xRayImages, currentTab);
-                });
-                deleteButton.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
-                deleteButton.setMaxSize(20, 20);
-                HBox hbox = new HBox(10); // 10 is space between elements in HBox
+                // Создаем кнопку удаления и HBox для размещения миниатюры и кнопки
+                Button deleteButton = createDeleteButton(img, currentTab);
+                HBox hbox = new HBox(10);
                 hbox.setAlignment(Pos.CENTER_LEFT);
                 hbox.getChildren().addAll(thumbnailImageView, deleteButton);
-                thumbnailsTilePane.getChildren().add(hbox);
+
+                thumbnailsTilePane.getChildren().add(hbox); // Добавляем миниатюру и кнопку на панель
             }
-            // Call zoom and drag setup methods outside the loop to ensure they're set up only once for the mainImageView.
+
+            // 4. Настраиваем зум, перетаскивание и кнопку сброса для основного изображения
             setupZoom(this.getImageView);
             setupImageDrag(this.getImageView);
             addResetButton(mainImageScrollPane);
         }
     }
 
+    // --- Вспомогательные методы ---
 
+    /**
+     * Обрабатывает клик по миниатюре.
+     *
+     * @param img               - изображение, соответствующее миниатюре
+     * @param thumbnailImageView - ImageView миниатюры
+     */
+    private void handleThumbnailClick(Image img, ImageView thumbnailImageView) {
+        // Восстанавливаем состояние масштабирования и позиции для изображения
+        double[] state = imageViewStates.getOrDefault(img, new double[]{1.0, 1.0, 0.0, 0.0});
+        getImageView.setScaleX(state[0]);
+        getImageView.setScaleY(state[1]);
+        getImageView.setTranslateX(state[2]);
+        getImageView.setTranslateY(state[3]);
+        getImageView.setImage(img); // Устанавливаем изображение в ImageView
+        selectedImage = img; // Сохраняем выбранное изображение
+
+        // Очищаем эффект DropShadow с предыдущей миниатюры
+        clearSelectedImage();
+
+        // Применяем эффект DropShadow к новой миниатюре
+        applySelectedEffect(thumbnailImageView);
+        this.selectedThumbnailView = thumbnailImageView; // Сохраняем ссылку на ImageView миниатюры
+    }
+
+    /**
+     * Создает кнопку удаления для изображения.
+     *
+     * @param img       - изображение для удаления
+     * @param currentTab - текущая вкладка
+     * @return кнопку удаления
+     */
+    private Button createDeleteButton(Image img, Tab currentTab) {
+        Button deleteButton = new Button("\u274C"); // Символ крестика
+        deleteButton.getStyleClass().add("button-delete"); // Добавляем стиль
+
+        // Обработчик нажатия на кнопку удаления
+        deleteButton.setOnAction(event -> {
+            List<Image> imageList = controller.xRayImages.get(currentTab); // Получаем список изображений для вкладки
+            if (imageList != null) {
+                imageList.remove(img); // Удаляем изображение из списка
+                this.getImageView.setImage(null); // Очищаем ImageView
+                controller.xRayImages.put(currentTab, imageList); // Обновляем список изображений для вкладки
+            }
+            putImagesOnTabPane(controller.xRayImages, currentTab); // Обновляем отображение изображений
+        });
+
+        // Настраиваем размеры кнопки
+        deleteButton.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
+        deleteButton.setMaxSize(20, 20);
+
+        return deleteButton;
+    }
+
+    /**
+     * Добавляет кнопку сброса на панель с изображением.
+     *
+     * @param scrollPane - панель с изображением
+     */
     private void addResetButton(ScrollPane scrollPane) {
         Button resetButton = new Button("RESET");
         resetButton.setOnAction(event -> {
             if (getImageView != null && selectedImage != null) {
+                // Сбрасываем масштаб и позицию изображения
                 getImageView.setTranslateX(0);
                 getImageView.setTranslateY(0);
                 getImageView.setScaleX(1);
@@ -114,7 +157,9 @@ public class ImageProcessor {
             }
         });
 
-        resetButton.getStyleClass().add("reset-button");
+        resetButton.getStyleClass().add("reset-button"); // Добавляем стиль
+
+        // Размещаем кнопку в правом нижнем углу панели
         if (scrollPane.getParent() instanceof StackPane) {
             StackPane parentPane = (StackPane) scrollPane.getParent();
             parentPane.getChildren().add(resetButton);
@@ -123,17 +168,19 @@ public class ImageProcessor {
         }
     }
 
-
-    //function for setup zoom for ImageView
+    /**
+     * Настраивает зум для ImageView.
+     *
+     * @param imageView - ImageView для настройки зума
+     */
     private void setupZoom(ImageView imageView) {
         imageView.setOnScroll(event -> {
             if (event.isControlDown() && imageView.getImage() != null) {
-                double zoomFactor = 1.05;
+                double zoomFactor = 1.05; // Коэффициент масштабирования
                 double deltaY = event.getDeltaY();
                 if (deltaY < 0) {
-                    zoomFactor = 2.0 - zoomFactor;
+                    zoomFactor = 2.0 - zoomFactor; // Уменьшаем масштаб
                 }
-
                 imageView.setScaleX(imageView.getScaleX() * zoomFactor);
                 imageView.setScaleY(imageView.getScaleY() * zoomFactor);
 
@@ -146,20 +193,23 @@ public class ImageProcessor {
                             imageView.getTranslateY()
                     });
                 }
-
                 event.consume();
             }
         });
     }
 
-
-    //function for setup dragging for ImageView
+    /**
+     * Настраивает перетаскивание для ImageView.
+     *
+     * @param imageView - ImageView для настройки перетаскивания
+     */
     private void setupImageDrag(ImageView imageView) {
-        final double[] xOffset = new double[1];
-        final double[] yOffset = new double[1];
+        final double[] xOffset = new double[1]; // Смещение по X
+        final double[] yOffset = new double[1]; // Смещение по Y
 
         imageView.setOnMousePressed(event -> {
             if (event.isControlDown() && imageView.getImage() != null) {
+                // Запоминаем начальные смещения
                 xOffset[0] = imageView.getTranslateX() - event.getSceneX();
                 yOffset[0] = imageView.getTranslateY() - event.getSceneY();
             }
@@ -167,6 +217,7 @@ public class ImageProcessor {
 
         imageView.setOnMouseDragged(event -> {
             if (event.isControlDown()) {
+                // Перемещаем изображение
                 imageView.setTranslateX(event.getSceneX() + xOffset[0]);
                 imageView.setTranslateY(event.getSceneY() + yOffset[0]);
 
@@ -183,20 +234,25 @@ public class ImageProcessor {
         });
     }
 
-    // To apply DropShadow Effect
+    /**
+     * Применяет эффект DropShadow к ImageView.
+     *
+     * @param imageView - ImageView для применения эффекта
+     */
     private void applySelectedEffect(ImageView imageView) {
-        DropShadow dropShadow = new DropShadow();
-        dropShadow.setColor(Color.GREY);
-        dropShadow.setRadius(20);
-        dropShadow.setSpread(0.7);
-        imageView.setEffect(dropShadow);
+        DropShadow dropShadow = new DropShadow(); // Создаем эффект тени
+        dropShadow.setColor(Color.GREY); // Цвет тени
+        dropShadow.setRadius(20); // Радиус размытия
+        dropShadow.setSpread(0.7); // Распространение тени
+        imageView.setEffect(dropShadow); // Применяем эффект к ImageView
     }
 
-    // To clear DropShadow
+    /**
+     * Очищает эффект DropShadow с ImageView.
+     */
     private void clearSelectedImage() {
         if (selectedThumbnailView != null) {
-            selectedThumbnailView.setEffect(null);
+            selectedThumbnailView.setEffect(null); // Удаляем эффект тени
         }
     }
-
 }
