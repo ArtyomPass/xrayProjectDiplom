@@ -32,9 +32,9 @@ public class HelloController {
     private DataPreprocessing dataPreprocessing;
     private SpectraAnalysis spectraAnalysis;
 
-    protected Map<Tab, List<Image>> xRayImages = new HashMap<>();
-    private Map<Tab, Image> calibrationImages = new HashMap<>();
-    private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>();
+    protected Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Keeps all images for spectrum
+    private Map<Tab, Image> calibrationImages = new HashMap<>(); // keeps images for calibration
+    private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); //keeps series data for chart and table
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>();
 
 
@@ -108,7 +108,6 @@ public class HelloController {
     }
 
     public void peakAnalysis(ActionEvent actionEvent) {
-
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
         XYChart.Series<Number, Number> series = spectralDataSeries.get(currentTab);
         detectedPeaks.put(currentTab, spectraAnalysis.visualizePeaks(currentTab, series, threshold, windowSize, minPeakDistance));
@@ -121,12 +120,10 @@ public class HelloController {
 
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
 
-        List<Image> selectedImages = fileImporter.importData(mainContainer.getScene().getWindow());
-        if (!selectedImages.isEmpty()) {
-            calibrationImages.put(currentTab, selectedImages.get(0));
-            System.out.println("Calibration image updated for the tab: " + currentTab.getText());
-        }
-
+        //  List<Image> selectedImages = fileImporter.importData(mainContainer.getScene().getWindow());//if (!selectedImages.isEmpty()) {
+        //    calibrationImages.put(currentTab, selectedImages.get(0));
+        //     System.out.println("Calibration image updated for the tab: " + currentTab.getText());
+        // }
         //XYChart.Series<Number, Number> series = spectraAnalysis.updateChartWithSplineData(currentTab,
         //        dataPreprocessing.preprocessImage(selectedImages, kernelSize).get(0));
         //List<XYChart.Data<Number, Number>> peaks = spectraAnalysis.visualizePeaks(currentTab, series, threshold, windowSize, minPeakDistance);
