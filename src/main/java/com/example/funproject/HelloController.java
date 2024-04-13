@@ -34,7 +34,7 @@ public class HelloController {
     private SpectraAnalysis spectraAnalysis;
 
     // Хранилища данных для различных типов информации
-    protected Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
+    public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
     private Map<Tab, Image> calibrationImages = new HashMap<>(); // Хранит изображения для калибровки
     private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
@@ -114,7 +114,7 @@ public class HelloController {
         int selectedIndex = currentImages.indexOf(selectedImage);
         if (selectedIndex != -1) {
             currentImages.set(selectedIndex, imageProcessor.selectedImage);
-            imageProcessor.getImageView.setImage(imageProcessor.selectedImage);
+            imageProcessor.imageView.setImage(imageProcessor.selectedImage);
         } else {
             System.out.println("Selected image not found in the list.");
             return;

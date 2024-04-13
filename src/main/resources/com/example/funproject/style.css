@@ -115,3 +115,18 @@
 .reset-button:pressed {
     -fx-background-color: #d9d9d9;
 }
+
+
+/* Стиль для кнопки "Отметить Пики" */
+.button-pick-peaks {
+    -fx-background-color: #FFA07A; /* Светло-коралловый фон */
+    -fx-text-fill: #2F4F4F; /* Темно-зеленый текст */
+    -fx-font-weight: bold; /* Жирный шрифт */
+    -fx-border-radius: 5px; /* Скругленные углы */
+    -fx-background-radius: 5px; /* Скругленный фон */
+    -fx-padding: 10px 20px; /* Отступы вокруг текста */
+}
+
+.button-pick-peaks:hover {
+    -fx-background-color: #E9967A; /* Чуть темнее светло-кораллового при наведении */
+}
