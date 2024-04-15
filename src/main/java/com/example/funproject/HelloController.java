@@ -37,7 +37,7 @@ public class HelloController {
     public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
     private Map<Tab, Image> calibrationImages = new HashMap<>(); // Хранит изображения для калибровки
     private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
-    private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
+    protected Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
 
     // Параметры для анализа пиков
     private int windowSize = 20;

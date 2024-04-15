@@ -18,79 +18,17 @@ import java.util.Map;
 public class ImageUtils {
 
     private ImageProcessor imageProcessor;
+    private  ButtonHandler buttonHandler;
 
-    public ImageUtils(ImageProcessor imageProcessor) {
+    public ImageUtils(ImageProcessor imageProcessor, ButtonHandler buttonHandler) {
         this.imageProcessor = imageProcessor;
-    }
-
-    /**
-     * Создает миниатюру изображения и добавляет ее на панель миниатюр.
-     *
-     * @param img            - изображение для создания миниатюры
-     * @param currentTab      - текущая вкладка
-     * @param thumbnailsTilePane - панель для размещения миниатюр
-     */
-    public void createThumbnail(Image img, Tab currentTab, TilePane thumbnailsTilePane) {
-        // Получаем текущие состояния изображений и проверяем, существует ли уже состояние для этого изображения
-        Map<Image, double[]> currentStates = imageProcessor.getImageViewStates();
-        currentStates.putIfAbsent(img, new double[]{1.0, 1.0, 0.0, 0.0}); // Добавляем состояние, если его нет
-
-        // Теперь обновляем состояния через сеттер
-        imageProcessor.setImageViewStates(currentStates);
-
-        ImageView thumbnailImageView = new ImageView(img);
-        thumbnailImageView.setFitWidth(150);
-        thumbnailImageView.setFitHeight(150);
-        thumbnailImageView.setPreserveRatio(true);
-
-        // Обработчик клика по миниатюре
-        thumbnailImageView.setOnMouseClicked(event -> {
-            handleThumbnailClick(img, thumbnailImageView);
-        });
-
-        // Создаем кнопку удаления и HBox для размещения миниатюры и кнопки
-        Button deleteButton = createDeleteButton(img, currentTab);
-        HBox hbox = new HBox(10);
-        hbox.setAlignment(Pos.CENTER_LEFT);
-        hbox.getChildren().addAll(thumbnailImageView, deleteButton);
-        thumbnailsTilePane.getChildren().add(hbox);
-    }
-
-    /**
-     * Обрабатывает нажатие на миниатюру изображения.
-     * Восстанавливает состояние масштабирования и позицию для изображения,
-     * устанавливает изображение в ImageView и применяет эффект выделения к миниатюре.
-     *
-     * @param img               - выбранное изображение
-     * @param thumbnailImageView - ImageView миниатюры
-     */
-    public void handleThumbnailClick(Image img, ImageView thumbnailImageView) {
-        // Восстанавливаем состояние масштабирования и позиции для изображения
-        Map<Image, double[]> imageViewStates = imageProcessor.getImageViewStates();
-        double[] state = imageViewStates.getOrDefault(img, new double[]{1.0, 1.0, 0.0, 0.0});
-        ImageView imageView = imageProcessor.getImageView();
-        imageView.setScaleX(state[0]);
-        imageView.setScaleY(state[1]);
-        imageView.setTranslateX(state[2]);
-        imageView.setTranslateY(state[3]);
-        imageView.setImage(img);
-        imageProcessor.setSelectedImage(img);
-
-        // Очищаем эффект выделения с предыдущей миниатюры
-        ImageView previouslySelectedThumbnail = imageProcessor.getSelectedThumbnailView();
-        if (previouslySelectedThumbnail != null) {
-            clearSelectedImageEffect(previouslySelectedThumbnail);
-            System.out.println("DropShadow cleared");
-        }
-        // Применяем эффект выделения к текущей миниатюре
-        applySelectedEffect(thumbnailImageView);
-        imageProcessor.setSelectedThumbnailView(thumbnailImageView);
+        this.buttonHandler = buttonHandler;
     }
 
     /**
      * Создает кнопку удаления для изображения на указанной вкладке.
      *
-     * @param img       - изображение для удаления
+     * @param img        - изображение для удаления
      * @param currentTab - текущая вкладка
      * @return кнопку удаления
      */
@@ -113,57 +51,6 @@ public class ImageUtils {
         deleteButton.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
         deleteButton.setMaxSize(20, 20);
         return deleteButton;
-    }
-
-    /**
-     * Добавляет кнопки сброса и выбора пиков на панель с изображением.
-     *
-     * @param scrollPane - панель с изображением
-     */
-    public void addButtonsBelowImageView(ScrollPane scrollPane) {
-        // Кнопка сброса масштаба и позиции изображения
-        Button resetButton = new Button("Сброс");
-        resetButton.setOnAction(event -> {
-            ImageView imageView = imageProcessor.getImageView();
-            Image selectedImage = imageProcessor.getSelectedImage();
-            if (imageView != null && selectedImage != null) {
-                // Сбрасываем масштаб и позицию изображения
-                imageView.setTranslateX(0);
-                imageView.setTranslateY(0);
-                imageView.setScaleX(1);
-                imageView.setScaleY(1);
-
-                // Создаем новый объект состояний с сброшенными значениями
-                Map<Image, double[]> newStates = imageProcessor.getImageViewStates();
-                newStates.put(selectedImage, new double[]{1.0, 1.0, 0.0, 0.0});
-                imageProcessor.setImageViewStates(newStates); // Обновляем состояние через сеттер
-                System.out.println("Состояние изображения сброшено.");
-            }
-        });
-
-        // Кнопка для выбора пиков (пока не реализована)
-        Button pickPeaksButton = new Button("Отметить Пики");
-        pickPeaksButton.setOnAction(event -> {
-            System.out.println("Режим выбора пиков активирован");
-        });
-
-        // Добавляем стили кнопкам
-        resetButton.getStyleClass().add("reset-button");
-        pickPeaksButton.getStyleClass().add("button-pick-peaks");
-
-        // Используем HBox для горизонтального размещения кнопок
-        HBox buttonBox = new HBox(10, pickPeaksButton, resetButton);
-        buttonBox.setAlignment(Pos.BOTTOM_RIGHT);
-        buttonBox.setBackground(new Background(new BackgroundFill(Color.GREY, CornerRadii.EMPTY, Insets.EMPTY)));
-        buttonBox.setMaxHeight(50);
-
-        // Размещаем HBox в правом нижнем углу панели
-        if (scrollPane.getParent() instanceof StackPane) {
-            StackPane parentPane = (StackPane) scrollPane.getParent();
-            parentPane.getChildren().add(buttonBox);
-            StackPane.setAlignment(buttonBox, Pos.BOTTOM_RIGHT);
-            StackPane.setMargin(buttonBox, new Insets(10));
-        }
     }
 
     /**
@@ -232,6 +119,80 @@ public class ImageUtils {
                 }
             }
         });
+    }
+
+    /**
+     * Создает миниатюру изображения и добавляет ее на панель миниатюр.
+     *
+     * @param img                - изображение для создания миниатюры
+     * @param currentTab         - текущая вкладка
+     * @param thumbnailsTilePane - панель для размещения миниатюр
+     */
+    public void createThumbnail(Image img, Tab currentTab, TilePane thumbnailsTilePane) {
+        // Получаем текущие состояния изображений и проверяем, существует ли уже состояние для этого изображения
+        Map<Image, double[]> currentStates = imageProcessor.getImageViewStates();
+        currentStates.putIfAbsent(img, new double[]{1.0, 1.0, 0.0, 0.0}); // Добавляем состояние, если его нет
+
+        // Обновляем состояния через сеттер
+        imageProcessor.setImageViewStates(currentStates);
+
+        ImageView thumbnailImageView = new ImageView(img);
+        thumbnailImageView.setFitWidth(150);
+        thumbnailImageView.setFitHeight(150);
+        thumbnailImageView.setPreserveRatio(true);
+
+        // Обработчик клика по миниатюре
+        thumbnailImageView.setOnMouseClicked(event -> {
+            handleThumbnailClick(img, thumbnailImageView);
+        });
+
+        // Создаем кнопку удаления и HBox для размещения миниатюры и кнопки
+        Button deleteButton = createDeleteButton(img, currentTab);
+        HBox hbox = new HBox(10);
+        hbox.setAlignment(Pos.CENTER_LEFT);
+        hbox.getChildren().addAll(thumbnailImageView, deleteButton);
+        thumbnailsTilePane.getChildren().add(hbox);
+    }
+
+    /**
+     * Обрабатывает нажатие на миниатюру изображения.
+     * Восстанавливает состояние масштабирования и позицию для изображения,
+     * устанавливает изображение в ImageView и применяет эффект выделения к миниатюре.
+     *
+     * @param img                - выбранное изображение
+     * @param thumbnailImageView - ImageView миниатюры
+     */
+    public void handleThumbnailClick(Image img, ImageView thumbnailImageView) {
+        // Сохраняем текущее выбранное изображение
+        Image currentImage = imageProcessor.getSelectedImage();
+
+        // Установка нового изображения
+        imageProcessor.setSelectedImage(img);
+        imageProcessor.getImageView().setImage(img);
+
+        // Восстанавливаем состояние масштабирования и позиции для нового изображения
+        Map<Image, double[]> imageViewStates = imageProcessor.getImageViewStates();
+        double[] state = imageViewStates.getOrDefault(img, new double[]{1.0, 1.0, 0.0, 0.0});
+        ImageView imageView = imageProcessor.getImageView();
+        imageView.setScaleX(state[0]);
+        imageView.setScaleY(state[1]);
+        imageView.setTranslateX(state[2]);
+        imageView.setTranslateY(state[3]);
+
+        // Управление видимостью линий через ButtonHandler
+        if (buttonHandler != null && currentImage != null && img != null) {
+            buttonHandler.switchLinesVisibility(currentImage, img);
+        }
+
+        // Очищаем эффект выделения с предыдущей миниатюры
+        ImageView previouslySelectedThumbnail = imageProcessor.getSelectedThumbnailView();
+        if (previouslySelectedThumbnail != null) {
+            clearSelectedImageEffect(previouslySelectedThumbnail);
+        }
+
+        // Применяем эффект выделения к текущей миниатюре
+        applySelectedEffect(thumbnailImageView);
+        imageProcessor.setSelectedThumbnailView(thumbnailImageView);
     }
 
     /**
