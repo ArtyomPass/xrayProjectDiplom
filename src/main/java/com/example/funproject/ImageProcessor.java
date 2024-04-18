@@ -24,7 +24,7 @@ public class ImageProcessor {
     private ButtonHandler buttonHandler;
 
     // Сохраняем состояния масштабирования и позиции для каждого изображения (масштаб X, масштаб Y, сдвиг X, сдвиг Y)
-    private Map<Image, double[]> imageViewStates = new HashMap<>();
+    protected Map<Image, double[]> imageViewStates = new HashMap<>();
 
     /**
      * Получает ScrollPane из SplitPane по указанным индексам.
@@ -110,7 +110,4 @@ public class ImageProcessor {
             buttonHandler.addButtonsBelowImageView(mainImageScrollPane);
         }
     }
-
-
-
 }

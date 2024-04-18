@@ -18,7 +18,7 @@ import java.util.Map;
 public class ImageUtils {
 
     private ImageProcessor imageProcessor;
-    private  ButtonHandler buttonHandler;
+    private ButtonHandler buttonHandler;
 
     public ImageUtils(ImageProcessor imageProcessor, ButtonHandler buttonHandler) {
         this.imageProcessor = imageProcessor;

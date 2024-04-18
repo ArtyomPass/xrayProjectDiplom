@@ -35,9 +35,8 @@ public class HelloController {
 
     // Хранилища данных для различных типов информации
     public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
-    private Map<Tab, Image> calibrationImages = new HashMap<>(); // Хранит изображения для калибровки
     private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
-    protected Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
+    public  Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
 
     // Параметры для анализа пиков
     private int windowSize = 20;
@@ -131,11 +130,6 @@ public class HelloController {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
         Image selectedImage = imageProcessor.selectedImage;
 
-        // Проверяем, выбрано ли изображение
-        if (selectedImage == null) {
-            System.out.println("Image is not selected");
-            return;
-        }
 
         // Извлекаем данные спектра из изображения
         XYChart.Series<Number, Number> series = spectraAnalysis.updateChartWithSplineData(currentTab, selectedImage);
