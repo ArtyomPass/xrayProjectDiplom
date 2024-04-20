@@ -1,5 +1,6 @@
 package com.example.funproject.imageutils;
 
+import com.example.funproject.HelloController;
 import com.example.funproject.ImageProcessor;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,10 +20,12 @@ public class ImageUtils {
 
     private ImageProcessor imageProcessor;
     private ButtonHandler buttonHandler;
+    private HelloController controller;
 
-    public ImageUtils(ImageProcessor imageProcessor, ButtonHandler buttonHandler) {
+    public ImageUtils(ImageProcessor imageProcessor, ButtonHandler buttonHandler, HelloController controller) {
         this.imageProcessor = imageProcessor;
         this.buttonHandler = buttonHandler;
+        this.controller = controller;
     }
 
     /**
@@ -163,6 +166,7 @@ public class ImageUtils {
      * @param thumbnailImageView - ImageView миниатюры
      */
     public void handleThumbnailClick(Image img, ImageView thumbnailImageView) {
+
         // Сохраняем текущее выбранное изображение
         Image currentImage = imageProcessor.getSelectedImage();
 
@@ -181,7 +185,7 @@ public class ImageUtils {
 
         // Управление видимостью линий через ButtonHandler
         if (buttonHandler != null && currentImage != null && img != null) {
-            buttonHandler.switchLinesVisibility(currentImage, img);
+            switchLinesVisibility(currentImage, img);
         }
 
         // Очищаем эффект выделения с предыдущей миниатюры
@@ -214,6 +218,33 @@ public class ImageUtils {
     public void clearSelectedImageEffect(ImageView imageView) {
         if (imageView != null) {
             imageView.setEffect(null);
+        }
+    }
+
+    /**
+     * Переключает видимость линий пиков при смене изображения.
+     *
+     * @param oldImage - предыдущее изображение
+     * @param newImage - новое изображение
+     */
+    public void switchLinesVisibility(Image oldImage, Image newImage) {
+        // Скрываем линии, связанные со старым изображением
+        if (oldImage != null) {
+            List<LineInfo> oldLines = controller.getImageLines().get(oldImage);
+            if (oldLines != null) {
+                for (LineInfo lineInfo : oldLines) {
+                    lineInfo.getLine().setVisible(false);
+                }
+            }
+        }
+        // Показываем линии, связанные с новым изображением
+        if (newImage != null) {
+            List<LineInfo> newLines = controller.getImageLines().get(newImage);
+            if (newLines != null) {
+                for (LineInfo lineInfo : newLines) {
+                    lineInfo.getLine().setVisible(true);
+                }
+            }
         }
     }
 }

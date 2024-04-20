@@ -5,6 +5,7 @@ import javafx.beans.binding.Bindings;
 import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -25,17 +26,19 @@ public class ButtonFunctionsHandler {
     private boolean peakSelectionMode; // Флаг режима выделения пиков
     private Button pickPeaksButton; // Кнопка для переключения режима выделения пиков
     private ComboBox<String> lineSelectionComboBox;
+    private TextField elementInput;
 
     public ButtonFunctionsHandler(ImageProcessor imageProcessor,
                                   Map<Image, List<LineInfo>> imageLines,
                                   boolean peakSelectionMode,
                                   Button pickPeaksButton,
-                                  ComboBox<String> lineSelectionComboBox) {
+                                  ComboBox<String> lineSelectionComboBox, TextField elementInput) {
         this.imageProcessor = imageProcessor;
         this.imageLines = imageLines;
         this.peakSelectionMode = peakSelectionMode;
         this.pickPeaksButton = pickPeaksButton;
         this.lineSelectionComboBox = lineSelectionComboBox;
+        this.elementInput = elementInput;
 
     }
 
@@ -131,7 +134,8 @@ public class ButtonFunctionsHandler {
         }
 
         String peakType = lineSelectionComboBox.getValue();
-        LineInfo lineInfo = new LineInfo(imageProcessor.getSelectedImage(), peakLine, finalXPosition, peakType);
+        String elementName = elementInput.getText();
+        LineInfo lineInfo = new LineInfo(peakLine, finalXPosition, peakType, elementName);
         List<LineInfo> linesForImage = imageLines.computeIfAbsent(imageProcessor.getSelectedImage(), k -> new ArrayList<>());
         linesForImage.add(lineInfo);
 

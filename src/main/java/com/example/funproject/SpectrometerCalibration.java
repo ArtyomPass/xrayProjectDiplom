@@ -6,6 +6,7 @@ import javafx.scene.control.MenuItem;
 public class SpectrometerCalibration {
     public static double[] linearRegression(double[] x, double[] y) {
         int n = x.length;
+        System.out.println(n);
         double sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
         for (int i = 0; i < n; i++) {
             sumX += x[i];
@@ -13,10 +14,16 @@ public class SpectrometerCalibration {
             sumXY += x[i] * y[i];
             sumXX += x[i] * x[i];
         }
-        double a = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        double denominator = n * sumXX - sumX * sumX;
+        System.out.println("Denominator: " + denominator + " n = " + n + " sumXX = " + sumXX + " sumX = " + sumX);
+
+
+        double a = (n * sumXY - sumX * sumY) / denominator;
         double b = (sumY - a * sumX) / n;
+        System.out.println("a = " + a + ", b = " + b);
         return new double[]{a, b};
     }
+
 
 
     public static double[] applyCalibrationCurve(double[] positions, double[] params) {
@@ -27,15 +34,4 @@ public class SpectrometerCalibration {
         return correctedEnergies;
     }
 
-    public static ContextMenu createInstrumentCalibrationMenu(){
-        ContextMenu contextMenu = new ContextMenu();
-
-        MenuItem importPhoto = new MenuItem("Импорт изображение");
-        MenuItem importText = new MenuItem("Импорт текстового файла");
-
-        //logic for import
-
-        contextMenu.getItems().addAll(importPhoto, importText);
-        return contextMenu;
-    }
 }

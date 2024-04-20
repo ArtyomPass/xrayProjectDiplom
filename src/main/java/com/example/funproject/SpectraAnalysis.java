@@ -52,7 +52,7 @@ public class SpectraAnalysis {
         return series;
     }
 
-    private LineChart<Number, Number> getLineChartFromTab(Tab tab) {
+    public LineChart<Number, Number> getLineChartFromTab(Tab tab) {
         if (tab.getContent() instanceof SplitPane) {
             SplitPane splitPane = (SplitPane) tab.getContent();
             for (Node item : splitPane.getItems()) {

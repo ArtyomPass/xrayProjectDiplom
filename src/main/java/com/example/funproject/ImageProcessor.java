@@ -23,6 +23,7 @@ public class ImageProcessor {
     private final ImageUtils imageUtils; // Утилиты для работы с изображениями
     private ButtonHandler buttonHandler;
 
+
     // Сохраняем состояния масштабирования и позиции для каждого изображения (масштаб X, масштаб Y, сдвиг X, сдвиг Y)
     protected Map<Image, double[]> imageViewStates = new HashMap<>();
 
@@ -68,8 +69,8 @@ public class ImageProcessor {
 
     public ImageProcessor(HelloController controller) {
         this.controller = controller;
-        buttonHandler = new ButtonHandler(this);
-        this.imageUtils = new ImageUtils(this, buttonHandler);
+        buttonHandler = new ButtonHandler(this, controller.imageLines);
+        this.imageUtils = new ImageUtils(this, buttonHandler, controller);
     }
 
     /**
@@ -110,4 +111,5 @@ public class ImageProcessor {
             buttonHandler.addButtonsBelowImageView(mainImageScrollPane);
         }
     }
+
 }

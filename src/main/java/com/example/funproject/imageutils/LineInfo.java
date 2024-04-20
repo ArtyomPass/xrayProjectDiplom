@@ -4,26 +4,21 @@ import javafx.scene.image.Image;
 import javafx.scene.shape.Line;
 
 public class LineInfo {
-    private Image image;
+
     private Line line;
     private double xPosition; // Координата X линии
     private String peakType; // Тип пика, например, "K-Alpha 1" or "K-Beta 2";
+    private String elementName;
 
-    public LineInfo(Image image, Line line, double xPosition, String peakType) {
-        this.image = image;
+    public LineInfo( Line line, double xPosition, String peakType, String elementName) {
         this.line = line;
         this.xPosition = xPosition;
         this.peakType = peakType;
+        this.elementName = elementName;
     }
 
     // Геттеры и сеттеры
-    public Image getImage() {
-        return image;
-    }
 
-    public void setImage(Image image) {
-        this.image = image;
-    }
 
     public Line getLine() {
         return line;
@@ -47,5 +42,13 @@ public class LineInfo {
 
     public void setPeakType(String peakType) {
         this.peakType = peakType;
+    }
+
+    public String getElementName() {
+        return elementName;
+    }
+
+    public void setElementName(String elementName) {
+        this.elementName = elementName;
     }
 }
