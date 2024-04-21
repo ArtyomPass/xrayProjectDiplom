@@ -27,7 +27,6 @@ public class HelloController {
 
     // Вспомогательные классы для работы с данными и изображениями
     private final FileImporter fileImporter = new FileImporter();
-    private ImageProcessor imageProcessor;
     private TabManager tabManager;
     private DataPreprocessing dataPreprocessing;
     private SpectraAnalysis spectraAnalysis;
@@ -36,8 +35,8 @@ public class HelloController {
     public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
     private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
+    private Map<Tab, ImageProcessor> imageProcessors = new HashMap<>();
     protected Map<Image, List<LineInfo>> imageLines;
-
 
     public Map<Image, List<LineInfo>> getImageLines() {
         return imageLines;
@@ -64,7 +63,6 @@ public class HelloController {
 
         // Создаем первую вкладку при запуске приложения
         imageLines = new HashMap<>();
-        imageProcessor = new ImageProcessor(HelloController.this);// Инициализируем обработчик изображений
 
         handleNewTab();
     }
@@ -75,6 +73,7 @@ public class HelloController {
     @FXML
     public void handleNewTab() {
         tabManager.createNewTab("Tab " + (tabPane.getTabs().size() + 1));
+        imageProcessors.put(tabPane.getSelectionModel().getSelectedItem(), new ImageProcessor(this));
     }
 
     /**
@@ -93,7 +92,7 @@ public class HelloController {
         xRayImages.put(currentTab, importedImages);
 
         // Обновляем отображение изображений на вкладке
-        imageProcessor.putImagesAndButtonsOnTabPane(xRayImages, currentTab);
+        imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(xRayImages, currentTab);
     }
 
     /**
@@ -102,7 +101,7 @@ public class HelloController {
      */
     public void handleImageSmoothing(ActionEvent event) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        Image selectedImage = imageProcessor.selectedImage;
+        Image selectedImage = imageProcessors.get(currentTab).selectedImage;
 
         // Проверяем, выбрано ли изображение
         if (selectedImage == null) {
@@ -111,20 +110,20 @@ public class HelloController {
         }
 
         // Сглаживаем изображение
-        imageProcessor.selectedImage = dataPreprocessing.imageSmoothing(selectedImage, kernelSize);
+        imageProcessors.get(currentTab).selectedImage = dataPreprocessing.imageSmoothing(selectedImage, kernelSize);
 
         // Обновляем изображение в хранилище и на вкладке
         List<Image> currentImages = xRayImages.getOrDefault(currentTab, new ArrayList<>());
         int selectedIndex = currentImages.indexOf(selectedImage);
         if (selectedIndex != -1) {
-            currentImages.set(selectedIndex, imageProcessor.selectedImage);
-            imageProcessor.imageView.setImage(imageProcessor.selectedImage);
+            currentImages.set(selectedIndex, imageProcessors.get(currentTab).selectedImage);
+            imageProcessors.get(currentTab).imageView.setImage(imageProcessors.get(currentTab).selectedImage);
         } else {
             System.out.println("Selected image not found in the list.");
             return;
         }
         xRayImages.put(currentTab, currentImages);
-        imageProcessor.putImagesAndButtonsOnTabPane(xRayImages, currentTab);
+        imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(xRayImages, currentTab);
     }
 
     /**
@@ -133,7 +132,7 @@ public class HelloController {
      */
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        Image selectedImage = imageProcessor.selectedImage;
+        Image selectedImage = imageProcessors.get(currentTab).selectedImage;
 
 
         // Извлекаем данные спектра из изображения
@@ -237,7 +236,3 @@ public class HelloController {
         }
     }
 }
-
-
-
-
