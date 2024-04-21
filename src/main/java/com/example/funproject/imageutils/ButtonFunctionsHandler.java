@@ -21,10 +21,10 @@ import java.util.Map;
 
 public class ButtonFunctionsHandler {
 
-    private ImageProcessor imageProcessor; // Ссылка на объект для обработки изображений
-    private Map<Image, List<LineInfo>> imageLines; // Сопоставление изображений с их линиями пиков
-    private boolean peakSelectionMode; // Флаг режима выделения пиков
-    private Button pickPeaksButton; // Кнопка для переключения режима выделения пиков
+    private ImageProcessor imageProcessor;
+    private Map<Image, List<LineInfo>> imageLines;
+    private boolean peakSelectionMode;
+    private Button pickPeaksButton;
     private ComboBox<String> lineSelectionComboBox;
     private TextField elementInput;
 
@@ -71,7 +71,7 @@ public class ButtonFunctionsHandler {
      *
      * @return новое состояние режима
      */
-    protected boolean togglePeakSelectionModeAndHandleClicks() {
+    protected void togglePeakSelectionModeAndHandleClicks() {
         this.peakSelectionMode = !peakSelectionMode;
         updateButtonStyle(peakSelectionMode); // Обновление стиля кнопки
         ImageView imageView = imageProcessor.getImageView();
@@ -96,8 +96,6 @@ public class ButtonFunctionsHandler {
                 imageView.setOnMouseClicked(null); // Удаление обработчика кликов
             }
         }
-
-        return peakSelectionMode;
     }
 
     /**

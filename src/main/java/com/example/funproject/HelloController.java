@@ -3,7 +3,6 @@ package com.example.funproject;
 import com.example.funproject.imageutils.LineInfo;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.geometry.Side;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -39,6 +38,7 @@ public class HelloController {
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
     protected Map<Image, List<LineInfo>> imageLines;
 
+
     public Map<Image, List<LineInfo>> getImageLines() {
         return imageLines;
     }
@@ -65,6 +65,7 @@ public class HelloController {
         // Создаем первую вкладку при запуске приложения
         imageLines = new HashMap<>();
         imageProcessor = new ImageProcessor(HelloController.this);// Инициализируем обработчик изображений
+
         handleNewTab();
     }
 
@@ -92,7 +93,7 @@ public class HelloController {
         xRayImages.put(currentTab, importedImages);
 
         // Обновляем отображение изображений на вкладке
-        imageProcessor.putImagesOnTabPane(xRayImages, currentTab);
+        imageProcessor.putImagesAndButtonsOnTabPane(xRayImages, currentTab);
     }
 
     /**
@@ -123,7 +124,7 @@ public class HelloController {
             return;
         }
         xRayImages.put(currentTab, currentImages);
-        imageProcessor.putImagesOnTabPane(xRayImages, currentTab);
+        imageProcessor.putImagesAndButtonsOnTabPane(xRayImages, currentTab);
     }
 
     /**

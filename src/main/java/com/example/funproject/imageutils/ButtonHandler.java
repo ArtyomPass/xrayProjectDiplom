@@ -22,13 +22,13 @@ import java.util.Map;
 
 public class ButtonHandler {
 
-    private final ImageProcessor imageProcessor; // Ссылка на объект для обработки изображений
+    private final ImageProcessor imageProcessor;
     private boolean peakSelectionMode = false; // Флаг режима выделения пиков
-    private Map<Image, List<LineInfo>> imageLines; // Сопоставление изображений с их линиями пиков
-    private Button pickPeaksButton; // Кнопка для переключения режима выделения пиков
-    ButtonFunctionsHandler buttonHandlerHelper; // Вспомогательный объект для обработки функций кнопок
-    private ComboBox<String> lineSelectionComboBox; // Выпадающий список для выбора типа линии пика
-    private TextField elementInput; // Текстовое поле для ввода элемента
+    private Map<Image, List<LineInfo>> imageLines;
+    private Button pickPeaksButton;
+    ButtonFunctionsHandler buttonHandlerHelper;
+    private ComboBox<String> lineSelectionComboBox;
+    private TextField elementInput;
 
     /**
      * Конструктор класса ButtonHandler.
@@ -36,15 +36,20 @@ public class ButtonHandler {
      *
      * @param imageProcessor - объект для обработки изображений
      */
-    public ButtonHandler(ImageProcessor imageProcessor, Map<Image, List<LineInfo>> imageLines) {
+    public ButtonHandler(ImageProcessor imageProcessor,
+                         Map<Image, List<LineInfo>> imageLines) {
         this.imageProcessor = imageProcessor;
-        this.pickPeaksButton = new Button("Отметить Пики");
         this.imageLines = imageLines;
-        // Создание выпадающего списка для выбора типа линии
+        this.pickPeaksButton = new Button("Отметить Пики");
         this.lineSelectionComboBox = new ComboBox<>();
         this.elementInput = new TextField();
-        this.buttonHandlerHelper = new ButtonFunctionsHandler(imageProcessor, imageLines, peakSelectionMode,
-                pickPeaksButton, lineSelectionComboBox, elementInput);
+
+        this.buttonHandlerHelper = new ButtonFunctionsHandler(imageProcessor,
+                imageLines,
+                peakSelectionMode,
+                pickPeaksButton,
+                lineSelectionComboBox,
+                elementInput);
     }
 
     /**
@@ -61,7 +66,7 @@ public class ButtonHandler {
         buttonBox.setBackground(new Background(new BackgroundFill(Color.GREY, CornerRadii.EMPTY, Insets.EMPTY)));
         buttonBox.setMaxHeight(50);
 
-        lineSelectionComboBox.getItems().addAll("K-Alpha 1", "K-Alpha 2", "K-Alpha 5", "K-Beta 1", "K-Beta 2");
+        lineSelectionComboBox.getItems().addAll("K-Alpha 1", "K-Alpha 2", "K-Beta 1", "K-Beta 2");
         lineSelectionComboBox.setPromptText("Выберите линию");
 
         resetButton.setOnAction(event -> buttonHandlerHelper.resetImageViewSettings(imageProcessor)); // Обработчик нажатия кнопки сброса
