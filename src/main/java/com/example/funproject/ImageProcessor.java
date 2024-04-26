@@ -21,7 +21,8 @@ public class ImageProcessor {
     private final ImageUtils imageUtils; // Утилиты для работы с изображениями
     private final ButtonHandler buttonHandler;
 
-    // Сохраняем состояния масштабирования и позиции для каждого изображения (масштаб X, масштаб Y, сдвиг X, сдвиг Y)
+    // Используем Map для хранения состояний масштабирования и позиции для каждого изображения
+    // Ключ - это экземпляр Image, значение - массив double[] с параметрами (масштаб X, масштаб Y, сдвиг X, сдвиг Y)
     protected Map<Image, double[]> imageViewStates = new HashMap<>();
 
     public ImageProcessor(HelloController controller) {
@@ -40,13 +41,12 @@ public class ImageProcessor {
      * @param currentTab - текущая активная вкладка
      */
     public void putImagesAndButtonsOnTabPane(Map<Tab, List<Image>> images, Tab currentTab) {
+        // Проверяем, является ли содержимое вкладки SplitPane
         if (currentTab != null && currentTab.getContent() instanceof SplitPane mainSplitPane) {
-
             // Получаем элементы интерфейса
             ScrollPane thumbnailsScrollPane = getScrollPaneFromSplitPane(mainSplitPane, 1, 1); // Панель с миниатюрами
             TilePane thumbnailsTilePane = (TilePane) thumbnailsScrollPane.getContent(); // Контейнер для миниатюр
             ScrollPane mainImageScrollPane = getScrollPaneFromSplitPane(mainSplitPane, 1, 0); // Панель с основным изображением
-
             this.imageView = (ImageView) mainImageScrollPane.getContent(); // Сохраняем ссылку на ImageView
 
             // Очищаем панель с миниатюрами и настраиваем ее
@@ -64,7 +64,6 @@ public class ImageProcessor {
             // Настраиваем зум, перетаскивание и кнопку сброса для основного изображения
             imageUtils.setupZoom(this.imageView);
             imageUtils.setupImageDrag(this.imageView);
-            //imageUtils.addButtonsBelowImageView(mainImageScrollPane);
             buttonHandler.addButtonsBelowImageView(mainImageScrollPane);
         }
     }
@@ -93,16 +92,17 @@ public class ImageProcessor {
         this.selectedThumbnailView = selectedThumbnailView;
     }
 
+    // Возвращаем копию imageViewStates для защиты данных от изменений
     public Map<Image, double[]> getImageViewStates() {
-        return new HashMap<>(imageViewStates); // Возвращаем копию для защиты данных
+        return new HashMap<>(imageViewStates);
     }
 
+    // Копируем данные при установке imageViewStates для сохранения
     public void setImageViewStates(Map<Image, double[]> imageViewStates) {
-        this.imageViewStates = new HashMap<>(imageViewStates); // Копируем данные для сохранения
+        this.imageViewStates = new HashMap<>(imageViewStates);
     }
 
     public HelloController getController() {
         return this.controller;
     }
-
 }
