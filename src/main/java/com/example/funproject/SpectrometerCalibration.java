@@ -5,6 +5,8 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TableView;
 import javafx.scene.image.Image;
 
 import java.util.ArrayList;
@@ -18,8 +20,10 @@ public class SpectrometerCalibration {
     // =========================================================================
 
     public static void calibrateSpectrum(Tab currentTab,
+                                         TabPane innerTabPane,
                                          Map<Image, List<LineInfo>> imageLines,
                                          Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries,
+                                         TableView<SpectralDataTable.SpectralData> spectralDataTableViews,
                                          SpectraAnalysis spectraAnalysis) {
 
         // 1. Подготовка данных для калибровки
@@ -61,8 +65,8 @@ public class SpectrometerCalibration {
 
             // 4. Обновление данных и визуализация
             spectralDataSeries.put(currentTab, calibratedSeries);
-            SpectralDataTable.updateTableViewInTab(currentTab, calibratedSeries.getData());
-            LineChart<Number, Number> chart = spectraAnalysis.getLineChartFromTab(currentTab);
+            SpectralDataTable.updateTableViewInTab(currentTab, calibratedSeries.getData(), spectralDataTableViews);
+            LineChart<Number, Number> chart = spectraAnalysis.getLineChartFromTab(currentTab, innerTabPane);
             if (chart != null) {
                 NumberAxis xAxis = (NumberAxis) chart.getXAxis();
                 xAxis.setAutoRanging(false);
@@ -108,8 +112,9 @@ public class SpectrometerCalibration {
     // Методы для калибровки методом двух стандартов
     // =========================================================================
 
-    public static void calibrateWithTwoStandards(Tab currentTab,
+    public static void calibrateWithTwoStandards(Tab currentTab,TabPane innerTabPane,
                                                  Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries,
+                                                 TableView<SpectralDataTable.SpectralData> spectralDataTableViews,
                                                  SpectraAnalysis spectraAnalysis,
                                                  double elementPosition,
                                                  double longWavelengthStandard1,
@@ -145,8 +150,8 @@ public class SpectrometerCalibration {
 
         // 5. Обновите данные и визуализацию
         spectralDataSeries.put(currentTab, calibratedSeries);
-        SpectralDataTable.updateTableViewInTab(currentTab, calibratedSeries.getData());
-        LineChart<Number, Number> chart = spectraAnalysis.getLineChartFromTab(currentTab);
+        SpectralDataTable.updateTableViewInTab(currentTab, calibratedSeries.getData(), spectralDataTableViews);
+        LineChart<Number, Number> chart = spectraAnalysis.getLineChartFromTab(currentTab, innerTabPane);
         if (chart != null) {
             NumberAxis xAxis = (NumberAxis) chart.getXAxis();
             xAxis.setAutoRanging(false);

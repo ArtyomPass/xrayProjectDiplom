@@ -34,40 +34,25 @@ public class SpectralDataTable {
         tableView.getColumns().addAll(xColumn, yColumn);
     }
 
-    public static void updateTableViewInTab(Tab tab, List<XYChart.Data<Number, Number>> seriesData) {
-        if (tab == null || !(tab.getContent() instanceof SplitPane)) return;
-        SplitPane mainSplitPane = (SplitPane) tab.getContent();
-        SplitPane dataTableChartSplitPane = findSplitPaneWithTableView(mainSplitPane);
-        if (dataTableChartSplitPane == null) return;
-
-        for (Node item : dataTableChartSplitPane.getItems()) {
-            if (item instanceof TableView) {
-                System.out.println("\nTable view is " + item);
-                TableView<SpectralData> tableView = (TableView<SpectralData>) item;
-                List<SpectralData> tableData = seriesData.stream()
-                        .map(data -> new SpectralData(data.getXValue(), data.getYValue()))
-                        .collect(Collectors.toList());
-
-                tableView.setItems(FXCollections.observableArrayList(tableData));
-                break;
-            }
+    public static void updateTableViewInTab(Tab tab,
+                                            List<XYChart.Data<Number, Number>> seriesData,
+                                            TableView<SpectralDataTable.SpectralData> spectralDataTableViews) {
+        if (tab == null) return; // Проверка на null
+        // Получаем TableView из spectralDataTableViews
+        TableView<SpectralData> tableView = spectralDataTableViews;
+        if (tableView == null) {
+            System.err.println("TableView не найдена для вкладки " + tab.getText());
+            return;
         }
+        // Преобразуем данные seriesData в SpectralData
+        List<SpectralData> tableData = seriesData.stream()
+                .map(data -> new SpectralData(data.getXValue(), data.getYValue()))
+                .collect(Collectors.toList());
+        // Обновляем данные таблицы
+        tableView.setItems(FXCollections.observableArrayList(tableData));
     }
 
 
-    private static SplitPane findSplitPaneWithTableView(SplitPane mainSplitPane) {
-        for (Node item : mainSplitPane.getItems()) {
-            if (item instanceof SplitPane) {
-                SplitPane splitPane = (SplitPane) item;
-                for (Node innerItem : splitPane.getItems()) {
-                    if (innerItem instanceof TableView) {
-                        return splitPane;
-                    }
-                }
-            }
-        }
-        return null;
-    }
 
     public static class SpectralData {
         private final Number xValue;

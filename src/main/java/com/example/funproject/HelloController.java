@@ -13,6 +13,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import org.w3c.dom.ls.LSOutput;
 
 import java.util.*;
 
@@ -36,11 +37,14 @@ public class HelloController {
 
     // Хранилища данных для различных типов информации
     public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
-    private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
     private Map<Tab, ImageProcessor> imageProcessors = new HashMap<>();
+    private Map<Tab, TabPane> innerTabPane = new HashMap<>(); // Внутренняя ТабПейн карта для отображения графиков
     protected Map<Image, List<LineInfo>> imageLines;
 
+
+    protected Map<Tab, TableView<SpectralDataTable.SpectralData>> spectralDataTableViews = new HashMap<>();
+    private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
 
     // Параметры для анализа пиков
     private int windowSize = 20;
@@ -71,7 +75,7 @@ public class HelloController {
      */
     @FXML
     public void handleNewTab() {
-        tabManager.createNewTab("Tab " + (tabPane.getTabs().size() + 1));
+        tabManager.createNewTab("Tab " + (tabPane.getTabs().size() + 1), this);
         imageProcessors.put(tabPane.getSelectionModel().getSelectedItem(), new ImageProcessor(this));
     }
 
@@ -142,15 +146,16 @@ public class HelloController {
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
         Image selectedImage = imageProcessors.get(currentTab).selectedImage;
+        TabPane currentInnerTabPane = innerTabPane.get(currentTab); // Получаем innerTabPane
 
-        XYChart.Series<Number, Number> series = spectraAnalysis.updateChartWithSplineData(currentTab, selectedImage);
+        XYChart.Series<Number, Number> series = spectraAnalysis.updateChartWithSplineData(currentTab, selectedImage, currentInnerTabPane);
         if (series == null) {
             System.out.println("Unable to generate spectral data for the selected Image");
             return;
         }
 
         spectralDataSeries.put(currentTab, series);
-        SpectralDataTable.updateTableViewInTab(currentTab, new ArrayList<>(series.getData()));
+        SpectralDataTable.updateTableViewInTab(currentTab, new ArrayList<>(series.getData()), spectralDataTableViews.get(currentTab));
     }
 
     /**
@@ -160,8 +165,10 @@ public class HelloController {
     public void peakAnalysis(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
         XYChart.Series<Number, Number> series = spectralDataSeries.get(currentTab);
+        TabPane currentInnerTabPane = innerTabPane.get(currentTab);
 
-        detectedPeaks.put(currentTab, spectraAnalysis.visualizePeaks(currentTab, series, threshold, windowSize, minPeakDistance));
+        // Передаем innerTabPane в visualizePeaks
+        detectedPeaks.put(currentTab, spectraAnalysis.visualizePeaks(currentTab, currentInnerTabPane, series, threshold, windowSize, minPeakDistance));
         System.out.println(detectedPeaks.get(currentTab));
     }
 
@@ -177,6 +184,7 @@ public class HelloController {
         calibrationMenu.getItems().addAll(linearRegressionItem, twoStandardItem);
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
 
+
         // Получаем ссылку на кнопку (предполагаем, что это кнопка вызывает метод)
         Button calibrationButton = (Button) actionEvent.getSource();
 
@@ -185,18 +193,28 @@ public class HelloController {
 
         // Обработчики событий для пунктов меню (пример для линейной регрессии)
         linearRegressionItem.setOnAction(event -> {
-            SpectrometerCalibration.calibrateSpectrum(currentTab, imageLines, spectralDataSeries, spectraAnalysis);
+            TabPane currentInnerTabPane = innerTabPane.get(currentTab); // Получаем innerTabPane
+            SpectrometerCalibration.calibrateSpectrum(currentTab,
+                    currentInnerTabPane,
+                    imageLines,
+                    spectralDataSeries,
+                    spectralDataTableViews.get(currentTab),
+                    spectraAnalysis);
+
             System.out.println("Спектр отклиброваван методом линейной регрессии");
         });
 
         twoStandardItem.setOnAction(event -> {
+            TabPane currentInnerTabPane = innerTabPane.get(currentTab); // Получаем innerTabPane
             // Пример: Железо (Fe) с Co Kα1 и Co Kα2 как стандартами
             double elementPosition = 26;  // Положение пика Fe (номер элемента в таблице Менделеева)
             double longWavelengthStandard1 = 6930;  // Энергия Co Kα1 (keV)
             double longWavelengthStandard2 = 6923;  // Энергия Co Kα2 (keV)
 
             SpectrometerCalibration.calibrateWithTwoStandards(currentTab,
+                    currentInnerTabPane,
                     spectralDataSeries,
+                    spectralDataTableViews.get(currentTab),
                     spectraAnalysis,
                     elementPosition,
                     longWavelengthStandard1,
@@ -206,7 +224,15 @@ public class HelloController {
         });
     }
 
+
     public Map<Image, List<LineInfo>> getImageLines() {
         return imageLines;
     }
+
+    public void setInnerTabPane(TabPane innerTabPane) {
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        this.innerTabPane.put(currentTab, innerTabPane);
+        System.out.println("innerTabPane: " + this.innerTabPane.get(currentTab));
+    }
+
 }
