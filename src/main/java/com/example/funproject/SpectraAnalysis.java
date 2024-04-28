@@ -21,7 +21,12 @@ public class SpectraAnalysis {
         // Empty
     }
 
-    public List<XYChart.Data<Number, Number>> visualizePeaks(Tab tab, TabPane innerTabPane, XYChart.Series<Number, Number> series, double threshold, int windowSize, double minPeakDistance) {
+    public List<XYChart.Data<Number, Number>> visualizePeaks(Tab tab,
+                                                             TabPane innerTabPane,
+                                                             XYChart.Series<Number, Number> series,
+                                                             double threshold,
+                                                             int windowSize,
+                                                             double minPeakDistance) {
         LineChart<Number, Number> chart = getLineChartFromTab(tab, innerTabPane); // Используем innerTabPane для поиска
         List<XYChart.Data<Number, Number>> detectedPeaks = new ArrayList<>();
         if (chart != null && series != null) {
@@ -40,7 +45,9 @@ public class SpectraAnalysis {
         return detectedPeaks;
     }
 
-    public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab, Image image, TabPane innerTabPane) {
+    public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab,
+                                                                    Image image,
+                                                                    TabPane innerTabPane) {
         LineChart<Number, Number> chart = getLineChartFromTab(tab, innerTabPane);
         XYChart.Series<Number, Number> series = null;
         if (chart != null && image != null) {
@@ -53,8 +60,10 @@ public class SpectraAnalysis {
         return series;
     }
 
-    public LineChart<Number, Number> getLineChartFromTab(Tab tab, TabPane innerTabPane) {
+    public LineChart<Number, Number> getLineChartFromTab(Tab tab,
+                                                         TabPane innerTabPane) {
         Tab currentGraphicTab = innerTabPane.getSelectionModel().getSelectedItem();
+        System.out.println("here" + currentGraphicTab);
         if (innerTabPane != null) {
             if (currentGraphicTab.getContent() instanceof LineChart) {
                 return (LineChart<Number, Number>) currentGraphicTab.getContent();
@@ -64,7 +73,9 @@ public class SpectraAnalysis {
     }
 
     private List<XYChart.Data<Number, Number>> detectPeaks(XYChart.Series<Number, Number> series,
-                                                           double threshold, int windowSize, double minPeakDistance) {
+                                                           double threshold,
+                                                           int windowSize,
+                                                           double minPeakDistance) {
         List<XYChart.Data<Number, Number>> peaks = new ArrayList<>();
         double lastPeakX = Double.MIN_VALUE;
         for (int i = windowSize; i < series.getData().size() - windowSize; i++) {

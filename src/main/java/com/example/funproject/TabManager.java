@@ -21,7 +21,7 @@ public class TabManager {
     // Глобальная переменная для хранения внутреннего TabPane для графиков
     private TabPane innerTabPane;
 
-    private Map<Tab, TabPane> innerTabPanes;
+    protected Map<Tab, TabPane> innerTabPanes;
 
     // Глобальная переменная для хранения TableView с данными спектра
     private TableView<SpectralDataTable.SpectralData> spectralDataTableView;
@@ -56,9 +56,6 @@ public class TabManager {
 
         // Выбор новой вкладки
         tabPane.getSelectionModel().select(newTab);
-
-        // Передача ссылки на внутренний TabPane контроллеру
-        controller.setInnerTabPane(innerTabPane);
 
         // Сохранение TableView для новой вкладки в контроллере
         controller.spectralDataTableViews.put(newTab, spectralDataTableView);

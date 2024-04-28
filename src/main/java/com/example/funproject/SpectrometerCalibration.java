@@ -24,7 +24,9 @@ public class SpectrometerCalibration {
                                          Map<Image, List<LineInfo>> imageLines,
                                          Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries,
                                          TableView<SpectralDataTable.SpectralData> spectralDataTableViews,
-                                         SpectraAnalysis spectraAnalysis) {
+                                         SpectraAnalysis spectraAnalysis,
+                                         TabManager tabManager,
+                                         TabPane tabPane) {
 
         // 1. Подготовка данных для калибровки
         Map<String, Double> knownEnergiesMn = Map.of(
@@ -53,7 +55,12 @@ public class SpectrometerCalibration {
         double[] calibrationParams = linearRegression(xValues, yValues);
 
         // 3. Применение калибровки к спектру
-        XYChart.Series<Number, Number> series = spectralDataSeries.get(currentTab);
+        XYChart.Series<Number, Number> series = spectralDataSeries.get(tabManager.innerTabPanes.get(tabPane
+                        .getSelectionModel()
+                        .getSelectedItem())
+                .getSelectionModel()
+                .getSelectedItem());
+        ;
         if (series != null) {
             double[] positions = series.getData().stream().mapToDouble(d -> d.getXValue().doubleValue()).toArray();
             double[] calibratedEnergies = applyCalibrationCurve(positions, calibrationParams);
@@ -64,7 +71,12 @@ public class SpectrometerCalibration {
             }
 
             // 4. Обновление данных и визуализация
-            spectralDataSeries.put(currentTab, calibratedSeries);
+            spectralDataSeries.put(tabManager.innerTabPanes.get(tabPane
+                            .getSelectionModel()
+                            .getSelectedItem())
+                    .getSelectionModel()
+                    .getSelectedItem(), calibratedSeries);
+
             SpectralDataTable.updateTableViewInTab(currentTab, calibratedSeries.getData(), spectralDataTableViews);
             LineChart<Number, Number> chart = spectraAnalysis.getLineChartFromTab(currentTab, innerTabPane);
             if (chart != null) {
@@ -112,17 +124,22 @@ public class SpectrometerCalibration {
     // Методы для калибровки методом двух стандартов
     // =========================================================================
 
-    public static void calibrateWithTwoStandards(Tab currentTab,TabPane innerTabPane,
+    public static void calibrateWithTwoStandards(Tab currentTab, TabPane innerTabPane,
                                                  Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries,
                                                  TableView<SpectralDataTable.SpectralData> spectralDataTableViews,
                                                  SpectraAnalysis spectraAnalysis,
                                                  double elementPosition,
                                                  double longWavelengthStandard1,
-                                                 double longWavelengthStandard2) {
+                                                 double longWavelengthStandard2,
+                                                 TabPane tabPane,
+                                                 TabManager tabManager) {
 
         // 1. Получите данные из серии
-        double[] positions = spectralDataSeries.get(currentTab).getData().stream()
-                .mapToDouble(d -> d.getXValue().doubleValue()).toArray();
+        double[] positions = spectralDataSeries.get(tabManager.innerTabPanes.get(tabPane
+                        .getSelectionModel()
+                        .getSelectedItem())
+                .getSelectionModel()
+                .getSelectedItem()).getData().stream().mapToDouble(d -> d.getXValue().doubleValue()).toArray();
 
         // 2. Выбор метода калибровки и необходимые данные
         boolean usingTwoPointsWithKBeta1 = true;  // Замените на false, если хотите использовать дисперсию
@@ -145,11 +162,20 @@ public class SpectrometerCalibration {
         XYChart.Series<Number, Number> calibratedSeries = new XYChart.Series<>();
         calibratedSeries.setName("Calibrated Spectrum (Two Standards)");
         for (int i = 0; i < positions.length; i++) {
-            calibratedSeries.getData().add(new XYChart.Data<>(calibratedEnergies[i], spectralDataSeries.get(currentTab).getData().get(i).getYValue()));
+            calibratedSeries.getData().add(new XYChart.Data<>(calibratedEnergies[i], spectralDataSeries.get(tabManager.innerTabPanes.get(tabPane
+                            .getSelectionModel()
+                            .getSelectedItem())
+                    .getSelectionModel()
+                    .getSelectedItem()).getData().get(i).getYValue()));
         }
 
         // 5. Обновите данные и визуализацию
-        spectralDataSeries.put(currentTab, calibratedSeries);
+        spectralDataSeries.put(tabManager.innerTabPanes.get(tabPane
+                        .getSelectionModel()
+                        .getSelectedItem())
+                .getSelectionModel()
+                .getSelectedItem(), calibratedSeries);
+
         SpectralDataTable.updateTableViewInTab(currentTab, calibratedSeries.getData(), spectralDataTableViews);
         LineChart<Number, Number> chart = spectraAnalysis.getLineChartFromTab(currentTab, innerTabPane);
         if (chart != null) {
