@@ -10,6 +10,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,12 +41,14 @@ public class SpectraAnalysis {
     }
 
     public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab, Image image, TabPane innerTabPane) {
-        LineChart<Number, Number> chart = getLineChartFromTab(tab, innerTabPane); // Используем innerTabPane для поиска
+        LineChart<Number, Number> chart = getLineChartFromTab(tab, innerTabPane);
         XYChart.Series<Number, Number> series = null;
         if (chart != null && image != null) {
             series = processImageForSplineData(image);
             chart.getData().clear();
             chart.getData().add(series);
+            series.getNode().setStyle("-fx-stroke: gray;");
+            chart.setCreateSymbols(false); // Отключаем создание символов
         }
         return series;
     }

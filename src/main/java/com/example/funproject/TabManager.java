@@ -4,70 +4,108 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TabManager {
 
+    // Глобальная переменная для хранения TabPane, с которым работает класс
     private final TabPane tabPane;
+
+    // Глобальная переменная для хранения внутреннего TabPane для графиков
     private TabPane innerTabPane;
-    // Объявление TableView как глобальной переменной
+
+    private Map<Tab, TabPane> innerTabPanes;
+
+    // Глобальная переменная для хранения TableView с данными спектра
     private TableView<SpectralDataTable.SpectralData> spectralDataTableView;
 
+    /**
+     * Конструктор класса TabManager
+     *
+     * @param tabPane - TabPane, с которым будет работать класс
+     */
     public TabManager(TabPane tabPane) {
         this.tabPane = tabPane;
-        // Инициализация TableView в конструкторе
+        this.innerTabPanes = new HashMap<>();
+    }
+
+    /**
+     * Метод для создания новой вкладки
+     *
+     * @param title      - название новой вкладки
+     * @param controller - контроллер приложения
+     */
+    public void createNewTab(String title, HelloController controller) {
+        // Инициализация TableView для новой вкладки
         SpectralDataTable spectralDataTable = new SpectralDataTable();
         spectralDataTableView = spectralDataTable.getTableView();
         spectralDataTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-    }
 
-    public void createNewTab(String title, HelloController controller) {
+        // Создание новой вкладки с контентом
         Tab newTab = new Tab(title, createTabContent(controller));
+
+        // Добавление новой вкладки в TabPane
         tabPane.getTabs().add(newTab);
+
+        // Выбор новой вкладки
         tabPane.getSelectionModel().select(newTab);
+
+        // Передача ссылки на внутренний TabPane контроллеру
         controller.setInnerTabPane(innerTabPane);
+
+        // Сохранение TableView для новой вкладки в контроллере
         controller.spectralDataTableViews.put(newTab, spectralDataTableView);
+
+        // Сохраняем innerTabPane в Map
+
+        innerTabPanes.put(newTab, innerTabPane); // Добавляем innerTabPane в Map
+
+        //System.out.println("HERE: " + innerTabPanes.get(newTab).getTabs());
+
+        handleAddButtonClick(controller);
     }
 
+    /**
+     * Метод для создания содержимого новой вкладки
+     *
+     * @param controller - контроллер приложения
+     * @return SplitPane - содержимое вкладки
+     */
     private SplitPane createTabContent(HelloController controller) {
-        // Создание нового TabPane для графиков
-        innerTabPane = new TabPane();
-        handleAddButtonClick();
+        // Создание внутреннего TabPane для графиков
+        this.innerTabPane = new TabPane();
 
-        // Создание кнопок
-        Button addChartButton = new Button("Добавить");
-        addChartButton.setOnAction(event -> handleAddButtonClick());
 
-        // Создание кнопки под таблицей
-        Button newButton = new Button("Новая кнопка");
-        newButton.setOnAction(event -> {
-            // Действия при нажатии на кнопку
-            System.out.println("Кнопка нажата!");
-        });
+        // Создание кнопок управления
+        Button addChartButton = new Button("Добавить график");
+        addChartButton.setOnAction(event -> handleAddButtonClick(controller));
 
-        VBox buttonsVBox = new VBox(addChartButton, newButton);
+        // Размещение кнопок в VBox
+        VBox buttonsVBox = new VBox(addChartButton);
         buttonsVBox.setSpacing(5);
 
-        // VBox для таблицы и кнопки
+        // Размещение TableView и кнопки обновления в VBox
         VBox tableVBox = new VBox();
-        tableVBox.getChildren().addAll(spectralDataTableView, newButton);
+        tableVBox.getChildren().addAll(spectralDataTableView);
 
-        // SplitPane для TableView и области с графиками (innerTabPane)
+        // Создание SplitPane для разделения TableView и области с графиками (innerTabPane)
         SplitPane tableAndChartsSplitPane = new SplitPane();
         tableAndChartsSplitPane.setOrientation(Orientation.HORIZONTAL);
         tableAndChartsSplitPane.getItems().addAll(tableVBox, innerTabPane);
-        tableAndChartsSplitPane.setDividerPositions(0.2);
+        tableAndChartsSplitPane.setDividerPositions(0.2); // Установка начального положения разделителя
 
-        // SplitPane для объединения tableAndChartsSplitPane и кнопок
+        // Создание SplitPane для объединения tableAndChartsSplitPane и кнопок управления
         SplitPane tabsAndButtonsSplitPane = new SplitPane();
         tabsAndButtonsSplitPane.setOrientation(Orientation.HORIZONTAL);
         tabsAndButtonsSplitPane.getItems().addAll(tableAndChartsSplitPane, buttonsVBox);
-        tabsAndButtonsSplitPane.setDividerPositions(0.9);
+        tabsAndButtonsSplitPane.setDividerPositions(0.9); // Установка начального положения разделителя
 
         // Инициализация ImageView для основного изображения
         ImageView mainImageView = new ImageView();
@@ -88,37 +126,71 @@ public class TabManager {
         thumbnailsScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         thumbnailsScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        // SplitPane для основного изображения и миниатюр
+        // Создание SplitPane для разделения основного изображения и миниатюр
         SplitPane imageAndThumbnailsSplitPane = new SplitPane();
         imageAndThumbnailsSplitPane.setOrientation(Orientation.HORIZONTAL);
         imageAndThumbnailsSplitPane.getItems().addAll(mainImageScrollPane, thumbnailsScrollPane);
-        imageAndThumbnailsSplitPane.setDividerPositions(0.8);
+        imageAndThumbnailsSplitPane.setDividerPositions(0.8); // Установка начального положения разделителя
 
-        // Общий вертикальный SplitPane для всего содержимого вкладки
+        // Создание главного вертикального SplitPane для объединения всего содержимого вкладки
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(Orientation.VERTICAL);
         mainSplitPane.getItems().addAll(tabsAndButtonsSplitPane, imageAndThumbnailsSplitPane);
-        mainSplitPane.setDividerPositions(0.6);
+        mainSplitPane.setDividerPositions(0.6); // Установка начального положения разделителя
 
+        // Возврат главного SplitPane как содержимого вкладки
         return mainSplitPane;
     }
 
-    private void handleAddButtonClick() {
-        // Создаём оси для графика
+    /**
+     * Метод для обработки нажатия кнопки "Добавить график"
+     */
+    private void handleAddButtonClick(HelloController controller) {
+        // Создание осей для графика
         NumberAxis xAxis = new NumberAxis();
         NumberAxis yAxis = new NumberAxis();
 
-        // Создаём сам график
+        // Создание LineChart
         LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
         lineChart.setTitle("Новый график");
 
-        // Создаём новую вкладку с графиком в качестве содержимого
-        Tab newTab = new Tab("График", lineChart);
+        // Создание новой вкладки с графиком
+        Tab newInnerTab = new Tab("График", lineChart);
 
-        // Добавляем вкладку в InnerTabPane
-        innerTabPane.getTabs().add(newTab);
+        TabPane innerTabPaneCurrent = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem());
 
-        // Выбираем новую вкладку
-        innerTabPane.getSelectionModel().select(newTab);
+        innerTabPaneCurrent.getTabs().add(newInnerTab);
+        innerTabPaneCurrent.getSelectionModel().select(newInnerTab);
+
+        Tab selectedNewInnerTab = innerTabPaneCurrent.getSelectionModel().getSelectedItem();
+
+        // Добавление слушателя для обновления TableView при выборе вкладки с графиком
+        selectedNewInnerTab.setOnSelectionChanged(event -> {
+            if (selectedNewInnerTab.isSelected()) {
+                updateTableViewFromActiveTab(controller);
+            }
+        });
+    }
+
+    /**
+     * Метод для обновления TableView с использованием данных из графика на активной вкладке
+     *
+     * @param controller - контроллер приложения
+     */
+    protected void updateTableViewFromActiveTab(HelloController controller) {
+        // Получение активной вкладки во внутреннем TabPane
+        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+
+        // Проверка, что вкладка содержит LineChart
+        if (currentInnerTab.getContent() instanceof LineChart) {
+            LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+            if (!currentChart.getData().isEmpty()) {
+                XYChart.Series<Number, Number> series = currentChart.getData().get(0);
+                // Получение TableView, соответствующей активной вкладке во внешнем TabPane
+                TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
+                // Обновление TableView
+                SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
+            }
+        }
     }
 }

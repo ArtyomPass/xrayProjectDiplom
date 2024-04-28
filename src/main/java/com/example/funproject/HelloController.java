@@ -25,7 +25,7 @@ public class HelloController {
     @FXML
     private VBox sidebar;
     @FXML
-    private TabPane tabPane;
+    protected TabPane tabPane;
     @FXML
     private Button spectrumCalibration;
 
@@ -39,12 +39,11 @@ public class HelloController {
     public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
     private Map<Tab, ImageProcessor> imageProcessors = new HashMap<>();
-    private Map<Tab, TabPane> innerTabPane = new HashMap<>(); // Внутренняя ТабПейн карта для отображения графиков
     protected Map<Image, List<LineInfo>> imageLines;
 
-
+    private Map<Tab, TabPane> innerTabPane = new HashMap<>(); // Внутренняя ТабПейн карта для отображения графиков
     protected Map<Tab, TableView<SpectralDataTable.SpectralData>> spectralDataTableViews = new HashMap<>();
-    private Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
+    protected Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
 
     // Параметры для анализа пиков
     private int windowSize = 20;
