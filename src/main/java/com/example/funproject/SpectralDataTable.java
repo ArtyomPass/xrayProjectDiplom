@@ -55,8 +55,8 @@ public class SpectralDataTable {
 
 
     public static class SpectralData {
-        private final Number xValue;
-        private final Number yValue;
+        private Number xValue;
+        private Number yValue;
 
         public SpectralData(Number xValue, Number yValue) {
             this.xValue = xValue;
@@ -70,5 +70,10 @@ public class SpectralDataTable {
         public Number getYValue() {
             return yValue;
         }
+
+        public void setYValue(Number yValue) {
+            this.yValue = yValue;
+        }
+
     }
 }

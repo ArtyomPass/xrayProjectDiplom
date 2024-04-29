@@ -33,14 +33,13 @@ public class HelloController {
     private final FileImporter fileImporter = new FileImporter();
     private TabManager tabManager;
     private DataPreprocessing dataPreprocessing;
-    private SpectraAnalysis spectraAnalysis;
+    protected SpectraAnalysis spectraAnalysis;
 
     // Хранилища данных для различных типов информации
     public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
     private Map<Tab, ImageProcessor> imageProcessors = new HashMap<>();
     protected Map<Image, List<LineInfo>> imageLines;
-
 
     protected Map<Tab, TableView<SpectralDataTable.SpectralData>> spectralDataTableViews = new HashMap<>();
     protected Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
@@ -75,7 +74,8 @@ public class HelloController {
     @FXML
     public void handleNewTab() {
         tabManager.createNewTab("Tab " + (tabPane.getTabs().size() + 1), this);
-        imageProcessors.put(tabPane.getSelectionModel().getSelectedItem(), new ImageProcessor(this));
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        imageProcessors.put(currentTab, new ImageProcessor(this));
     }
 
     /**
@@ -86,8 +86,8 @@ public class HelloController {
     public void handleImportXRayImage() {
         List<Image> importedImages = fileImporter.importData(mainContainer.getScene().getWindow());
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        xRayImages.put(currentTab, importedImages);
-        imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(xRayImages, currentTab);
+        this.xRayImages.put(currentTab, importedImages);
+        imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(this.xRayImages, currentTab);
     }
 
     /**

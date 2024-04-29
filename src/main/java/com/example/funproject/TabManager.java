@@ -20,11 +20,17 @@ public class TabManager {
 
     // Глобальная переменная для хранения внутреннего TabPane для графиков
     private TabPane innerTabPane;
-
     protected Map<Tab, TabPane> innerTabPanes;
 
     // Глобальная переменная для хранения TableView с данными спектра
     private TableView<SpectralDataTable.SpectralData> spectralDataTableView;
+
+    private Button addChartButton;
+    private Button normalizeButton;
+    private Button interpolateButton;
+    private Button backgroundButton;
+    private Button smoothButton;
+    private Button correctionButton;
 
     /**
      * Конструктор класса TabManager
@@ -64,8 +70,6 @@ public class TabManager {
 
         innerTabPanes.put(newTab, innerTabPane); // Добавляем innerTabPane в Map
 
-        //System.out.println("HERE: " + innerTabPanes.get(newTab).getTabs());
-
         handleAddButtonClick(controller);
     }
 
@@ -79,13 +83,39 @@ public class TabManager {
         // Создание внутреннего TabPane для графиков
         this.innerTabPane = new TabPane();
 
-
         // Создание кнопок управления
         Button addChartButton = new Button("Добавить график");
         addChartButton.setOnAction(event -> handleAddButtonClick(controller));
 
+        // Создание кнопок управления
+        addChartButton = new Button("Добавить график");
+        addChartButton.setOnAction(event -> handleAddButtonClick(controller));
+
+        normalizeButton = new Button("Нормировать");
+        normalizeButton.setOnAction(event -> handleNormalizeButtonClick(controller));
+
+        interpolateButton = new Button("Интерполяция");
+        interpolateButton.setOnAction(event -> handleInterpolateButtonClick(controller));
+
+        backgroundButton = new Button("Фон");
+        backgroundButton.setOnAction(event -> handleSubtractBackgroundButtonClick(controller));
+
+        smoothButton = new Button("Сглаживание");
+        smoothButton.setOnAction(event -> handleSmoothButtonClick(controller));
+
+        correctionButton = new Button("Коррекция");
+        correctionButton.setOnAction(event -> handleCorrectionButtonClick(controller));
+
+        addChartButton.setMaxWidth(Double.MAX_VALUE);
+        normalizeButton.setMaxWidth(Double.MAX_VALUE);
+        interpolateButton.setMaxWidth(Double.MAX_VALUE);
+        backgroundButton.setMaxWidth(Double.MAX_VALUE);
+        smoothButton.setMaxWidth(Double.MAX_VALUE);
+        correctionButton.setMaxWidth(Double.MAX_VALUE);
+
         // Размещение кнопок в VBox
-        VBox buttonsVBox = new VBox(addChartButton);
+        VBox buttonsVBox = new VBox(addChartButton, normalizeButton, interpolateButton,
+                backgroundButton, smoothButton, correctionButton);
         buttonsVBox.setSpacing(5);
 
         // Размещение TableView и кнопки обновления в VBox
@@ -139,9 +169,47 @@ public class TabManager {
         return mainSplitPane;
     }
 
-    /**
+    private void handleNormalizeButtonClick(HelloController controller) {
+        // Получить активную вкладку и график
+        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+        // Получить TableView
+        TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
+
+        // Создать и показать окно нормировки
+        NormalizationWindow normalizationWindow = new NormalizationWindow(controller, currentChart, tableViewToUpdate);
+        normalizationWindow.show();
+    }
+
+    private void handleInterpolateButtonClick(HelloController controller) {
+        // Получить активную вкладку и график
+        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+        InterpolateWindow interpolateWindow = new InterpolateWindow(controller, currentChart);
+        interpolateWindow.show();
+    }
+
+    private void handleSubtractBackgroundButtonClick(HelloController controller) {
+        // Получить активную вкладку и график
+        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+        // Создать и показать диалоговое окно
+        BackgroundSubtractionWindow backgroundWindow = new BackgroundSubtractionWindow(controller, currentChart);
+        backgroundWindow.show();
+    }
+
+    private void handleSmoothButtonClick(HelloController controller) {
+    }
+
+    private void handleCorrectionButtonClick(HelloController controller) {
+    }
+
+    /*******************************************************************************************************************
      * Метод для обработки нажатия кнопки "Добавить график"
-     */
+     ******************************************************************************************************************/
     private void handleAddButtonClick(HelloController controller) {
         // Создание осей для графика
         NumberAxis xAxis = new NumberAxis();
@@ -169,14 +237,15 @@ public class TabManager {
         });
     }
 
-    /**
-     * Метод для обновления TableView с использованием данных из графика на активной вкладке
-     *
-     * @param controller - контроллер приложения
-     */
+    // Метод для обновления TableView с использованием данных из графика на активной вкладке
     protected void updateTableViewFromActiveTab(HelloController controller) {
         // Получение активной вкладки во внутреннем TabPane
-        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+        Tab currentInnerTab = innerTabPanes.get(controller
+                .tabPane
+                .getSelectionModel()
+                .getSelectedItem())
+                .getSelectionModel()
+                .getSelectedItem();
 
         // Проверка, что вкладка содержит LineChart
         if (currentInnerTab.getContent() instanceof LineChart) {

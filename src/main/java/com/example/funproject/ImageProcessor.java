@@ -49,16 +49,18 @@ public class ImageProcessor {
             ScrollPane mainImageScrollPane = getScrollPaneFromSplitPane(mainSplitPane, 1, 0); // Панель с основным изображением
             this.imageView = (ImageView) mainImageScrollPane.getContent(); // Сохраняем ссылку на ImageView
 
-            // Очищаем панель с миниатюрами и настраиваем ее
-            thumbnailsTilePane.getChildren().clear();
-            thumbnailsTilePane.setPrefColumns(1);
-            thumbnailsTilePane.setVgap(10);
-            thumbnailsTilePane.setHgap(10);
+            if (images != null) {
+                // Очищаем панель с миниатюрами и настраиваем ее
+                thumbnailsTilePane.getChildren().clear();
+                thumbnailsTilePane.setPrefColumns(1);
+                thumbnailsTilePane.setVgap(10);
+                thumbnailsTilePane.setHgap(10);
 
-            // Обрабатываем изображения и создаем миниатюры
-            List<Image> tabImages = images.getOrDefault(currentTab, new ArrayList<>());
-            for (Image img : tabImages) {
-                imageUtils.createThumbnail(img, currentTab, thumbnailsTilePane);
+                // Обрабатываем изображения и создаем миниатюры
+                List<Image> tabImages = images.getOrDefault(currentTab, new ArrayList<>());
+                for (Image img : tabImages) {
+                    imageUtils.createThumbnail(img, currentTab, thumbnailsTilePane);
+                }
             }
 
             // Настраиваем зум, перетаскивание и кнопку сброса для основного изображения

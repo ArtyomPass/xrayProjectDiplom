@@ -75,6 +75,7 @@ public class ButtonHandler {
         // Добавление HBox в StackPane, содержащий ScrollPane
         if (scrollPane.getParent() instanceof StackPane) {
             StackPane parentPane = (StackPane) scrollPane.getParent();
+            ;
             parentPane.getChildren().add(buttonBox);
             StackPane.setAlignment(buttonBox, Pos.BOTTOM_RIGHT);
             StackPane.setMargin(buttonBox, new Insets(10));
