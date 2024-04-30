@@ -48,7 +48,6 @@ public class NormalizationWindow extends Stage {
 
         applyButton.setOnAction(event -> {
             try {
-
                 if(chart.getData().isEmpty()){
                     // Вывод сообщения об ошибке
                     Alert alert = new Alert(Alert.AlertType.ERROR);

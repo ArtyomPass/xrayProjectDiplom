@@ -31,6 +31,7 @@ public class TabManager {
     private Button backgroundButton;
     private Button smoothButton;
     private Button correctionButton;
+    private Button statisticsButton;
 
     /**
      * Конструктор класса TabManager
@@ -106,16 +107,21 @@ public class TabManager {
         correctionButton = new Button("Коррекция");
         correctionButton.setOnAction(event -> handleCorrectionButtonClick(controller));
 
+        // Новая кнопка "Статистика"
+        Button statisticsButton = new Button("Статистика");
+        statisticsButton.setOnAction(event -> handleStatisticsButtonClick(controller));
+
         addChartButton.setMaxWidth(Double.MAX_VALUE);
         normalizeButton.setMaxWidth(Double.MAX_VALUE);
         interpolateButton.setMaxWidth(Double.MAX_VALUE);
         backgroundButton.setMaxWidth(Double.MAX_VALUE);
         smoothButton.setMaxWidth(Double.MAX_VALUE);
         correctionButton.setMaxWidth(Double.MAX_VALUE);
+        statisticsButton.setMaxWidth(Double.MAX_VALUE);
 
         // Размещение кнопок в VBox
         VBox buttonsVBox = new VBox(addChartButton, normalizeButton, interpolateButton,
-                backgroundButton, smoothButton, correctionButton);
+                backgroundButton, smoothButton, correctionButton, statisticsButton);
         buttonsVBox.setSpacing(5);
 
         // Размещение TableView и кнопки обновления в VBox
@@ -202,9 +208,25 @@ public class TabManager {
     }
 
     private void handleSmoothButtonClick(HelloController controller) {
+        // Получить активную вкладку и график
+        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+        // Создать и показать диалоговое окно
+        SmoothWindow smoothWindow = new SmoothWindow(controller, currentChart);
+        smoothWindow.show();
     }
 
     private void handleCorrectionButtonClick(HelloController controller) {
+    }
+
+    private void handleStatisticsButtonClick(HelloController controller) {
+        // Получить активную вкладку и график
+        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+        StatisticsWindow statisticsWindow = new StatisticsWindow(controller, currentChart);
+        statisticsWindow.show();
     }
 
     /*******************************************************************************************************************
