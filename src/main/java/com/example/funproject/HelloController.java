@@ -1,19 +1,15 @@
 package com.example.funproject;
 
-import com.example.funproject.imageutils.LineInfo;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Side;
 import javafx.scene.Node;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import org.w3c.dom.ls.LSOutput;
 
 import java.util.*;
 
@@ -52,6 +48,7 @@ public class HelloController {
     // Параметры для сглаживания изображений
     private int kernelSize = 9;
 
+
     /**
      * Инициализация контроллера.
      * Создает экземпляры вспомогательных классов и настраивает начальное состояние приложения.
@@ -73,7 +70,7 @@ public class HelloController {
      */
     @FXML
     public void handleNewTab() {
-        tabManager.createNewTab("Tab " + (tabPane.getTabs().size() + 1), this);
+        tabManager.createNewTab("Tab " + (tabPane.getTabs().size() + 1), this, imageProcessors);
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
         imageProcessors.put(currentTab, new ImageProcessor(this));
     }
@@ -84,8 +81,8 @@ public class HelloController {
      */
     @FXML
     public void handleImportXRayImage() {
-        List<Image> importedImages = fileImporter.importData(mainContainer.getScene().getWindow());
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        List<Image> importedImages = fileImporter.importData(mainContainer.getScene().getWindow());
         this.xRayImages.put(currentTab, importedImages);
         imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(this.xRayImages, currentTab);
     }
@@ -96,6 +93,7 @@ public class HelloController {
      */
     public void handleImageSmoothing(ActionEvent event) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+
         Image selectedImage = imageProcessors.get(currentTab).selectedImage;
         if (selectedImage == null) {
             System.out.println("No image selected for processing.");
@@ -112,7 +110,7 @@ public class HelloController {
         smoothItem.setOnAction(e -> {
             Image smoothedImage = dataPreprocessing.imageSmoothing(selectedImage, kernelSize);
             updateImageInTab(currentTab, selectedImage, smoothedImage);
-            imageProcessors.get(currentTab).setSelectedImage(smoothedImage);
+            imageProcessors.get(currentTab).selectedImage = smoothedImage;
         });
 
         densityItem.setOnAction(e -> {
@@ -185,13 +183,15 @@ public class HelloController {
      * Отображает контекстное меню для выбора метода калибровки (в данном случае, линейная регрессия).
      */
     public void spectrumCalibration(ActionEvent actionEvent) {
+        CalibrationDialog dialog = new CalibrationDialog();
+        dialog.show(); // Отображение диалогового окна и ожидание выбора
+
         // Создание контекстного меню
         ContextMenu calibrationMenu = new ContextMenu();
         MenuItem linearRegressionItem = new MenuItem("Линейная регрессия");
         MenuItem twoStandardItem = new MenuItem("Метод двух стандартов");
         calibrationMenu.getItems().addAll(linearRegressionItem, twoStandardItem);
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-
 
         // Получаем ссылку на кнопку (предполагаем, что это кнопка вызывает метод)
         Button calibrationButton = (Button) actionEvent.getSource();

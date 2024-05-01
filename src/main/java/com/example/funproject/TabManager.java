@@ -23,8 +23,10 @@ public class TabManager {
     protected Map<Tab, TabPane> innerTabPanes;
 
     // Глобальная переменная для хранения TableView с данными спектра
+    // TableView для отображения данных спектра в каждой вкладке
     private TableView<SpectralDataTable.SpectralData> spectralDataTableView;
 
+    // Кнопки управления
     private Button addChartButton;
     private Button normalizeButton;
     private Button interpolateButton;
@@ -34,7 +36,7 @@ public class TabManager {
     private Button statisticsButton;
 
     /**
-     * Конструктор класса TabManager
+     * Конструктор TabManager.
      *
      * @param tabPane - TabPane, с которым будет работать класс
      */
@@ -44,19 +46,22 @@ public class TabManager {
     }
 
     /**
-     * Метод для создания новой вкладки
+     * Создает новую вкладку с заданным названием и содержимым.
      *
      * @param title      - название новой вкладки
      * @param controller - контроллер приложения
      */
-    public void createNewTab(String title, HelloController controller) {
+    public void createNewTab(String title, HelloController controller, Map<Tab, ImageProcessor> imageProcessors) {
         // Инициализация TableView для новой вкладки
         SpectralDataTable spectralDataTable = new SpectralDataTable();
         spectralDataTableView = spectralDataTable.getTableView();
         spectralDataTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        // Создание новой вкладки с контентом
-        Tab newTab = new Tab(title, createTabContent(controller));
+        // Создание содержимого вкладки
+        SplitPane tabContent = createTabContent(controller);
+
+        // Создание новой вкладки с содержимым
+        Tab newTab = new Tab(title, tabContent);
 
         // Добавление новой вкладки в TabPane
         tabPane.getTabs().add(newTab);
@@ -67,15 +72,18 @@ public class TabManager {
         // Сохранение TableView для новой вкладки в контроллере
         controller.spectralDataTableViews.put(newTab, spectralDataTableView);
 
-        // Сохраняем innerTabPane в Map
+        // Сохранение внутреннего TabPane для графиков в Map
+        innerTabPanes.put(newTab, innerTabPane);
 
-        innerTabPanes.put(newTab, innerTabPane); // Добавляем innerTabPane в Map
-
+        // Обработка нажатия кнопки "Добавить график"
         handleAddButtonClick(controller);
+
+
+
     }
 
     /**
-     * Метод для создания содержимого новой вкладки
+     * Создает содержимое для новой вкладки, включая SplitPane с графиками, TableView и кнопками управления.
      *
      * @param controller - контроллер приложения
      * @return SplitPane - содержимое вкладки
@@ -85,32 +93,22 @@ public class TabManager {
         this.innerTabPane = new TabPane();
 
         // Создание кнопок управления
-        Button addChartButton = new Button("Добавить график");
-        addChartButton.setOnAction(event -> handleAddButtonClick(controller));
-
-        // Создание кнопок управления
         addChartButton = new Button("Добавить график");
         addChartButton.setOnAction(event -> handleAddButtonClick(controller));
-
         normalizeButton = new Button("Нормировать");
         normalizeButton.setOnAction(event -> handleNormalizeButtonClick(controller));
-
         interpolateButton = new Button("Интерполяция");
         interpolateButton.setOnAction(event -> handleInterpolateButtonClick(controller));
-
         backgroundButton = new Button("Фон");
         backgroundButton.setOnAction(event -> handleSubtractBackgroundButtonClick(controller));
-
         smoothButton = new Button("Сглаживание");
         smoothButton.setOnAction(event -> handleSmoothButtonClick(controller));
-
         correctionButton = new Button("Коррекция");
         correctionButton.setOnAction(event -> handleCorrectionButtonClick(controller));
-
-        // Новая кнопка "Статистика"
-        Button statisticsButton = new Button("Статистика");
+        statisticsButton = new Button("Статистика");
         statisticsButton.setOnAction(event -> handleStatisticsButtonClick(controller));
 
+        // Настройка внешнего вида кнопок
         addChartButton.setMaxWidth(Double.MAX_VALUE);
         normalizeButton.setMaxWidth(Double.MAX_VALUE);
         interpolateButton.setMaxWidth(Double.MAX_VALUE);
@@ -124,7 +122,7 @@ public class TabManager {
                 backgroundButton, smoothButton, correctionButton, statisticsButton);
         buttonsVBox.setSpacing(5);
 
-        // Размещение TableView и кнопки обновления в VBox
+        // Размещение TableView в VBox
         VBox tableVBox = new VBox();
         tableVBox.getChildren().addAll(spectralDataTableView);
 
@@ -171,9 +169,13 @@ public class TabManager {
         mainSplitPane.getItems().addAll(tabsAndButtonsSplitPane, imageAndThumbnailsSplitPane);
         mainSplitPane.setDividerPositions(0.6); // Установка начального положения разделителя
 
+
+
         // Возврат главного SplitPane как содержимого вкладки
         return mainSplitPane;
     }
+
+    // Обработчики событий для кнопок управления
 
     private void handleNormalizeButtonClick(HelloController controller) {
         // Получить активную вкладку и график
@@ -193,6 +195,7 @@ public class TabManager {
         Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
+        // Создать и показать окно интерполяции
         InterpolateWindow interpolateWindow = new InterpolateWindow(controller, currentChart);
         interpolateWindow.show();
     }
@@ -202,7 +205,7 @@ public class TabManager {
         Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
-        // Создать и показать диалоговое окно
+        // Создать и показать окно вычитания фона
         BackgroundSubtractionWindow backgroundWindow = new BackgroundSubtractionWindow(controller, currentChart);
         backgroundWindow.show();
     }
@@ -212,12 +215,13 @@ public class TabManager {
         Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
-        // Создать и показать диалоговое окно
+        // Создать и показать окно сглаживания
         SmoothWindow smoothWindow = new SmoothWindow(controller, currentChart);
         smoothWindow.show();
     }
 
     private void handleCorrectionButtonClick(HelloController controller) {
+        // TODO: Реализовать обработку нажатия кнопки "Коррекция"
     }
 
     private void handleStatisticsButtonClick(HelloController controller) {
@@ -225,13 +229,17 @@ public class TabManager {
         Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
+        // Создать и показать окно статистики
         StatisticsWindow statisticsWindow = new StatisticsWindow(controller, currentChart);
         statisticsWindow.show();
     }
 
-    /*******************************************************************************************************************
-     * Метод для обработки нажатия кнопки "Добавить график"
-     ******************************************************************************************************************/
+    /**
+     * Обрабатывает нажатие кнопки "Добавить график".
+     * Создает новый LineChart и добавляет его на новую вкладку во внутреннем TabPane.
+     *
+     * @param controller - контроллер приложения
+     */
     private void handleAddButtonClick(HelloController controller) {
         // Создание осей для графика
         NumberAxis xAxis = new NumberAxis();
@@ -243,39 +251,38 @@ public class TabManager {
 
         // Создание новой вкладки с графиком
         Tab newInnerTab = new Tab("График", lineChart);
-
         TabPane innerTabPaneCurrent = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem());
-
         innerTabPaneCurrent.getTabs().add(newInnerTab);
         innerTabPaneCurrent.getSelectionModel().select(newInnerTab);
 
-        Tab selectedNewInnerTab = innerTabPaneCurrent.getSelectionModel().getSelectedItem();
-
         // Добавление слушателя для обновления TableView при выборе вкладки с графиком
-        selectedNewInnerTab.setOnSelectionChanged(event -> {
-            if (selectedNewInnerTab.isSelected()) {
+        newInnerTab.setOnSelectionChanged(event -> {
+            if (newInnerTab.isSelected()) {
                 updateTableViewFromActiveTab(controller);
             }
         });
     }
 
-    // Метод для обновления TableView с использованием данных из графика на активной вкладке
+    /**
+     * Обновляет TableView с использованием данных из графика на активной вкладке.
+     *
+     * @param controller - контроллер приложения
+     */
     protected void updateTableViewFromActiveTab(HelloController controller) {
         // Получение активной вкладки во внутреннем TabPane
-        Tab currentInnerTab = innerTabPanes.get(controller
-                .tabPane
-                .getSelectionModel()
-                .getSelectedItem())
-                .getSelectionModel()
-                .getSelectedItem();
+        Tab currentInnerTab = innerTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
 
         // Проверка, что вкладка содержит LineChart
         if (currentInnerTab.getContent() instanceof LineChart) {
             LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+            // Проверка, что график содержит данные
             if (!currentChart.getData().isEmpty()) {
                 XYChart.Series<Number, Number> series = currentChart.getData().get(0);
+
                 // Получение TableView, соответствующей активной вкладке во внешнем TabPane
                 TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
+
                 // Обновление TableView
                 SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
             }

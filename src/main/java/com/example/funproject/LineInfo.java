@@ -1,6 +1,5 @@
-package com.example.funproject.imageutils;
+package com.example.funproject;
 
-import javafx.scene.image.Image;
 import javafx.scene.shape.Line;
 
 public class LineInfo {
@@ -10,7 +9,7 @@ public class LineInfo {
     private String peakType; // Тип пика, например, "K-Alpha 1" or "K-Beta 2";
     private String elementName;
 
-    public LineInfo( Line line, double xPosition, String peakType, String elementName) {
+    public LineInfo(Line line, double xPosition, String peakType, String elementName) {
         this.line = line;
         this.xPosition = xPosition;
         this.peakType = peakType;

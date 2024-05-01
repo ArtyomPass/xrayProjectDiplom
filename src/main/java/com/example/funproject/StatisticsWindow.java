@@ -1,13 +1,10 @@
 package com.example.funproject;
 
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -16,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class StatisticsWindow extends Stage {
+
     public StatisticsWindow(HelloController controller, LineChart<Number, Number> chart) {
         // Создание текстовой области для вывода информации
         TextArea infoArea = new TextArea();
@@ -28,20 +26,35 @@ public class StatisticsWindow extends Stage {
         // Добавление текстовой области в окно
         VBox layout = new VBox(infoArea);
         VBox.setVgrow(infoArea, Priority.ALWAYS); // Добавляем эту строку для автоматического изменения размера
+
         this.setScene(new Scene(layout));
         this.setAlwaysOnTop(true);
+        this.setWidth(600);  // Устанавливаем ширину окна
+        this.setHeight(400); // Устанавливаем высоту окна
     }
 
+    /**
+     * Генерирует текст с теоретической информацией и результатами расчетов.
+     *
+     * @param chart График, из которого извлекаются данные.
+     * @return Текст с информацией и результатами.
+     */
     private String generateInfoText(LineChart<Number, Number> chart) {
         // Вычисление параметров
         double energyMax = calculateEnergyMax(chart);
-        double centerOfGravity = calculateCenterOfGravity(chart); ////////////// Тут криво считает
+        double centerOfGravity = calculateCenterOfGravity(chart);
         double width = calculateSpectralLineWidth(chart);
         double asymmetry = calculateAsymmetryIndex(chart);
         double integralIntensity = calculateIntegralIntensity(chart);
 
         // Формирование текста
-        return "**Теоретическая информация**\n\n" +
+        return "**Результаты**\n\n" +
+                "Энергия максимума: " + energyMax + "\n" +
+                "Центр тяжести: " + centerOfGravity + "\n" +
+                "Ширина: " + width + "\n" +
+                "Асимметрия: " + asymmetry + "\n" +
+                "Интегральная интенсивность: " + integralIntensity + "\n\n\n\n" +
+                "**Теоретическая информация**\n\n" +
                 "**Энергия максимума:**\n" +
                 "Определяется на середине линии, соединяющей точки спектра, расположенные на 95% высоты.\n\n" +
                 "**Центр тяжести:**\n" +
@@ -51,15 +64,16 @@ public class StatisticsWindow extends Stage {
                 "**Асимметрия:**\n" +
                 "Отношение сумм интенсивностей в каждой точке спектра слева и справа от максимума.\n\n" +
                 "**Интегральная интенсивность:**\n" +
-                "Сумма интенсивности в каждой точке спектра.\n\n" +
-                "**Результаты**\n\n" +
-                "Энергия максимума: " + energyMax + "\n" +
-                "Центр тяжести: " + centerOfGravity + "\n" +
-                "Ширина: " + width + "\n" +
-                "Асимметрия: " + asymmetry + "\n" +
-                "Интегральная интенсивность: " + integralIntensity;
+                "Сумма интенсивности в каждой точке спектра.\n";
     }
 
+    /**
+     * Вычисляет энергию максимума спектра.
+     *
+     * @param chart График, из которого извлекаются данные.
+     * @return Энергия максимума.
+     * @throws IllegalArgumentException Если недостаточно точек для определения энергии максимума.
+     */
     private double calculateEnergyMax(LineChart<Number, Number> chart) {
         // Получение данных из графика
         ObservableList<XYChart.Data<Number, Number>> data = chart.getData().get(chart.getData().size() - 1).getData();
@@ -83,25 +97,37 @@ public class StatisticsWindow extends Stage {
 
         // Расчет энергии максимума как середины между двумя точками
         return (energy1 + energy2) / 2;
-
     }
 
+    /**
+     * Вычисляет центр тяжести спектра.
+     *
+     * @param chart График, из которого извлекаются данные.
+     * @return Центр тяжести спектра.
+     */
     private double calculateCenterOfGravity(LineChart<Number, Number> chart) {
         double sumIntensityEnergy = 0;
         int numPoints = chart.getData().get(chart.getData().size() - 1).getData().size();
-        System.out.println(numPoints);
+
         // Получаем данные один раз для эффективности
         List<XYChart.Data<Number, Number>> dataPoints = chart.getData().get(chart.getData().size() - 1).getData();
+
         // Используем итератор для доступа к данным
         for (XYChart.Data<Number, Number> data : dataPoints) {
             double energy = data.getXValue().doubleValue();
             double intensity = data.getYValue().doubleValue();
             sumIntensityEnergy += intensity * energy;
-            System.out.println(sumIntensityEnergy + " = " + intensity + " * " + energy);
         }
+
         return sumIntensityEnergy / numPoints;
     }
 
+    /**
+     * Вычисляет ширину спектральной линии на половине высоты.
+     *
+     * @param chart График, из которого извлекаются данные.
+     * @return Ширина спектральной линии.
+     */
     private double calculateSpectralLineWidth(LineChart<Number, Number> chart) {
         // Получаем данные последней серии
         List<XYChart.Data<Number, Number>> data = chart.getData().get(chart.getData().size() - 1).getData();
@@ -123,6 +149,7 @@ public class StatisticsWindow extends Stage {
         // 3. Найти точки пересечения
         int leftIndex = 0;
         int rightIndex = data.size() - 1;
+
         // Поиск слева
         for (int i = maxIndex; i >= 0; i--) {
             if (data.get(i).getYValue().doubleValue() <= halfMaxIntensity) {
@@ -130,6 +157,7 @@ public class StatisticsWindow extends Stage {
                 break;
             }
         }
+
         // Поиск справа
         for (int i = maxIndex; i < data.size(); i++) {
             if (data.get(i).getYValue().doubleValue() <= halfMaxIntensity) {
@@ -144,6 +172,12 @@ public class StatisticsWindow extends Stage {
         return Math.abs(rightEnergy - leftEnergy);
     }
 
+    /**
+     * Вычисляет индекс асимметрии спектральной линии.
+     *
+     * @param chart График, из которого извлекаются данные.
+     * @return Индекс асимметрии.
+     */
     private double calculateAsymmetryIndex(LineChart<Number, Number> chart) {
         // Получить данные последней серии
         List<XYChart.Data<Number, Number>> data = chart.getData().get(chart.getData().size() - 1).getData();
@@ -175,17 +209,20 @@ public class StatisticsWindow extends Stage {
         return sumLeft / sumRight;
     }
 
+    /**
+     * Вычисляет интегральную интенсивность спектра.
+     *
+     * @param chart График, из которого извлекаются данные.
+     * @return Интегральная интенсивность.
+     */
     private double calculateIntegralIntensity(LineChart<Number, Number> chart) {
         double integralIntensity = 0;
         int lastChartSeries = chart.getData().size() - 1;
         List<XYChart.Data<Number, Number>> dataPoints = chart.getData().get(lastChartSeries).getData();
-
         for (XYChart.Data<Number, Number> data : dataPoints) {
             double intensity = data.getYValue().doubleValue();
             integralIntensity += intensity;
         }
-
         return integralIntensity;
     }
-
 }
