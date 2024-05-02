@@ -54,7 +54,7 @@ public class SpectrometerCalibration {
         double[] calibrationParams = linearRegression(xValues, yValues);
 
         // 3. Применение калибровки к спектру
-        XYChart.Series<Number, Number> series = spectralDataSeries.get(tabManager.innerTabPanes.get(tabPane
+        XYChart.Series<Number, Number> series = spectralDataSeries.get(tabManager.innerTableAndChartTabPanes.get(tabPane
                         .getSelectionModel()
                         .getSelectedItem())
                 .getSelectionModel()
@@ -70,7 +70,7 @@ public class SpectrometerCalibration {
             }
 
             // 4. Обновление данных и визуализация
-            spectralDataSeries.put(tabManager.innerTabPanes.get(tabPane
+            spectralDataSeries.put(tabManager.innerTableAndChartTabPanes.get(tabPane
                             .getSelectionModel()
                             .getSelectedItem())
                     .getSelectionModel()
@@ -134,7 +134,7 @@ public class SpectrometerCalibration {
                                                  TabManager tabManager) {
 
         // 1. Получите данные из серии
-        double[] positions = spectralDataSeries.get(tabManager.innerTabPanes.get(tabPane
+        double[] positions = spectralDataSeries.get(tabManager.innerTableAndChartTabPanes.get(tabPane
                         .getSelectionModel()
                         .getSelectedItem())
                 .getSelectionModel()
@@ -161,7 +161,7 @@ public class SpectrometerCalibration {
         XYChart.Series<Number, Number> calibratedSeries = new XYChart.Series<>();
         calibratedSeries.setName("Calibrated Spectrum (Two Standards)");
         for (int i = 0; i < positions.length; i++) {
-            calibratedSeries.getData().add(new XYChart.Data<>(calibratedEnergies[i], spectralDataSeries.get(tabManager.innerTabPanes.get(tabPane
+            calibratedSeries.getData().add(new XYChart.Data<>(calibratedEnergies[i], spectralDataSeries.get(tabManager.innerTableAndChartTabPanes.get(tabPane
                             .getSelectionModel()
                             .getSelectedItem())
                     .getSelectionModel()
@@ -169,7 +169,7 @@ public class SpectrometerCalibration {
         }
 
         // 5. Обновите данные и визуализацию
-        spectralDataSeries.put(tabManager.innerTabPanes.get(tabPane
+        spectralDataSeries.put(tabManager.innerTableAndChartTabPanes.get(tabPane
                         .getSelectionModel()
                         .getSelectedItem())
                 .getSelectionModel()

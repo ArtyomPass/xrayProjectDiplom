@@ -115,13 +115,13 @@ public class ImageUtils {
                                       Image newImage,
                                       HelloController controller) {
         if (oldImage != null) {
-            List<LineInfo> oldLines = controller.getImageLines().get(oldImage);
+            List<LineInfo> oldLines = controller.imageLines.get(oldImage);
             if (oldLines != null) {
                 oldLines.forEach(lineInfo -> lineInfo.getLine().setVisible(false));
             }
         }
         if (newImage != null) {
-            List<LineInfo> newLines = controller.getImageLines().get(newImage);
+            List<LineInfo> newLines = controller.imageLines.get(newImage);
             if (newLines != null) {
                 newLines.forEach(lineInfo -> lineInfo.getLine().setVisible(true));
             }

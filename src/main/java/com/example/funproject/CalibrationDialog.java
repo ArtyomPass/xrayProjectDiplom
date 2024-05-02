@@ -94,7 +94,7 @@ public class CalibrationDialog extends Stage {
         double[] calibrationParams = linearRegression(xValues, yValues);
 
         // 3. Применение калибровки к спектру
-        XYChart.Series<Number, Number> series = spectralDataSeries.get(tabManager.innerTabPanes.get(tabPane
+        XYChart.Series<Number, Number> series = spectralDataSeries.get(tabManager.innerTableAndChartTabPanes.get(tabPane
                         .getSelectionModel()
                         .getSelectedItem())
                 .getSelectionModel()
@@ -110,7 +110,7 @@ public class CalibrationDialog extends Stage {
             }
 
             // 4. Обновление данных и визуализация
-            spectralDataSeries.put(tabManager.innerTabPanes.get(tabPane
+            spectralDataSeries.put(tabManager.innerTableAndChartTabPanes.get(tabPane
                             .getSelectionModel()
                             .getSelectedItem())
                     .getSelectionModel()

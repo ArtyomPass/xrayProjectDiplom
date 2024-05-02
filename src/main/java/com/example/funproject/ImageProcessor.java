@@ -13,27 +13,26 @@ import java.util.Map;
 public class ImageProcessor {
     private final HelloController controller;
     protected ImageView imageView;
+    protected TilePane thumbnailsTilePane;
+
     protected Image selectedImage;
     private ImageView selectedThumbnailView;
-    private Map<Image, double[]> imageViewStates = new HashMap<>();
+    protected Map<Image, double[]> imageViewStates = new HashMap<>();
 
     private final ImageUtils imageUtils;
-    protected final ImageButtonsHandler buttonHandler;
 
-    public ImageProcessor(HelloController controller) {
+
+    public ImageProcessor(HelloController controller, ImageView mainImageView, TilePane thumbnailsTilePane) {
         this.controller = controller;
+        this.imageView = mainImageView;
+        this.thumbnailsTilePane = thumbnailsTilePane;
+
         this.selectedThumbnailView = new ImageView();
-        this.buttonHandler = new ImageButtonsHandler(this, controller.imageLines);
         this.imageUtils = new ImageUtils(this, selectedThumbnailView);
     }
 
     public void putImagesAndButtonsOnTabPane(Map<Tab, List<Image>> images, Tab currentTab) {
-        if (currentTab != null && currentTab.getContent() instanceof SplitPane mainSplitPane) {
-
-            // Получаем элементы интерфейса
-            TilePane thumbnailsTilePane = (TilePane) getScrollPaneFromSplitPane(mainSplitPane, 1, 1).getContent();
-            this.imageView = (ImageView) getScrollPaneFromSplitPane(mainSplitPane, 1, 0).getContent();
-
+        if (currentTab != null) {
             if (images != null) {
                 thumbnailsTilePane.getChildren().clear();
                 thumbnailsTilePane.setPrefColumns(1);
@@ -45,16 +44,10 @@ public class ImageProcessor {
                     imageUtils.createThumbnail(currentTab, img, thumbnailsTilePane, controller, imageViewStates);
                 }
             }
-
-            // Настраиваем зум, перетаскивание и кнопку сброса c другими кнопками
+            // Настраиваем зум, перетаскивание и кнопку сброса
             imageUtils.setupZoom(imageView, imageViewStates);
             imageUtils.setupImageDrag(imageView, imageViewStates);
-            buttonHandler.addButtonsBelowImageView(getScrollPaneFromSplitPane(mainSplitPane, 1, 0), imageViewStates);
         }
-    }
-
-    private ScrollPane getScrollPaneFromSplitPane(SplitPane splitPane, int splitPaneIndex, int itemIndex) {
-        return (ScrollPane) ((SplitPane) splitPane.getItems().get(splitPaneIndex)).getItems().get(itemIndex);
     }
 
     // Геттеры и сеттеры

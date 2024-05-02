@@ -44,7 +44,7 @@
     <!-- Status Bar at the bottom -->
     <bottom>
         <HBox>
-            <Label text="Статус: готово к использованию"/>
+            <Label text="Статус: готов к использованию"/>
             <!-- Additional status indicators can be added here -->
         </HBox>
     </bottom>
