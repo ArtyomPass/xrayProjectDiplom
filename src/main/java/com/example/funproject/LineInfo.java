@@ -1,5 +1,6 @@
 package com.example.funproject;
 
+import javafx.scene.chart.XYChart;
 import javafx.scene.shape.Line;
 
 public class LineInfo {
@@ -8,8 +9,15 @@ public class LineInfo {
     private double xPosition; // Координата X линии
     private String peakType; // Тип пика, например, "K-Alpha 1" or "K-Beta 2";
     private String elementName;
+    private XYChart.Series<Number, Number> series;  // Поле для хранения серии данных
 
-    public LineInfo(Line line, double xPosition, String peakType, String elementName) {
+    public LineInfo(XYChart.Series<Number, Number> series,
+                    Line line,
+                    double xPosition,
+                    String peakType,
+                    String elementName) {
+
+        this.series = series;  // Инициализация серии данных
         this.line = line;
         this.xPosition = xPosition;
         this.peakType = peakType;

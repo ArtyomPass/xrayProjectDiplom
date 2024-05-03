@@ -1,6 +1,7 @@
 package com.example.funproject;
 
 import javafx.beans.binding.Bindings;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -24,19 +25,25 @@ import java.util.Map;
 public class ImageControlPanel extends HBox {
 
     private final ImageProcessor imageProcessor;
-    private final Map<Image, List<LineInfo>> imageLines;
-    private List<Line> peakLines = new ArrayList<>();
     private final TabPane innerTabPane;
+
+    private final Map<Image, List<LineInfo>> imageLines;
+    private final Map<Tab, List<LineInfo>> chartLines;
+
+    // Элементы управления
     private final ComboBox<String> lineSelectionComboBox;
     private final TextField elementInput;
     private final Button pickPeaksButton;
     private final Button resetButton;
+
+    // Флаг режима выбора пиков
     private boolean peakSelectionMode = false;
 
     public ImageControlPanel(HelloController controller, ImageProcessor imageProcessor,
                              ImageView mainImageView, TabPane innerTabPane) {
         this.imageProcessor = imageProcessor;
         this.imageLines = controller.imageLines;
+        this.chartLines = controller.chartLines;
         this.innerTabPane = innerTabPane;
 
         // Инициализация элементов управления
@@ -46,7 +53,7 @@ public class ImageControlPanel extends HBox {
         resetButton = new Button("Сброс");
 
         // Настройка ComboBox
-        lineSelectionComboBox.getItems().addAll("K-Alpha 1", "K-Alpha 2", "K-Beta 1", "K-Beta 2");
+        lineSelectionComboBox.getItems().addAll("Ka1", "Ka2", "Kb1", "Kb2");
         lineSelectionComboBox.setPromptText("Выберите линию");
 
         // Настройка TextField
@@ -68,6 +75,7 @@ public class ImageControlPanel extends HBox {
     private void handleResetButtonClick(ImageView imageView) {
         Image selectedImage = imageProcessor.selectedImage;
         if (imageView != null && selectedImage != null) {
+            // Сброс трансформаций изображения
             imageView.setTranslateX(0);
             imageView.setTranslateY(0);
             imageView.setScaleX(1);
@@ -76,6 +84,7 @@ public class ImageControlPanel extends HBox {
         }
     }
 
+    // Переключение режима выбора пиков и обработка кликов
     private void togglePeakSelectionModeAndHandleClicks() {
         peakSelectionMode = !peakSelectionMode;
         updateButtonStyle();
@@ -90,54 +99,87 @@ public class ImageControlPanel extends HBox {
         }
     }
 
+    // Настройка режима выбора пиков
     private void setupPeakSelectionMode(LineChart<Number, Number> lineChart, ImageView imageView) {
         if (lineChart != null) {
+            // Установка курсора перекрестия
             lineChart.setCursor(Cursor.CROSSHAIR);
+
+            // Обработка кликов на графике
             lineChart.setOnMouseClicked(event -> handleLineChartClick(event, lineChart));
         }
 
         if (imageView != null) {
+            // Установка курсора перекрестия
             imageView.setCursor(Cursor.CROSSHAIR);
+
+            // Обработка кликов на изображении
             imageView.setOnMouseClicked(event -> handleImageViewClick(event, imageView));
         }
     }
 
+    // Отключение режима выбора пиков
     private void disablePeakSelectionMode(LineChart<Number, Number> lineChart, ImageView imageView) {
         if (lineChart != null) {
+            // Сброс курсора
             lineChart.setCursor(Cursor.DEFAULT);
             lineChart.setOnMouseClicked(null);
+
+            // Включение автоматического масштабирования для осей
+            NumberAxis xAxis = (NumberAxis) lineChart.getXAxis();
+            xAxis.setAutoRanging(true);
+            NumberAxis yAxis = (NumberAxis) lineChart.getYAxis();
+            yAxis.setAutoRanging(true);
         }
 
         if (imageView != null) {
+            // Сброс курсора
             imageView.setCursor(Cursor.DEFAULT);
             imageView.setOnMouseClicked(null);
         }
     }
 
+    // Обработка клика на графике
     private void handleLineChartClick(MouseEvent event, LineChart<Number, Number> lineChart) {
         if (event.getButton() == MouseButton.PRIMARY) {
+            // Получение координаты X клика
             double mouseXValue = lineChart.getXAxis().sceneToLocal(event.getSceneX(), 0).getX();
             if (!Double.isNaN(mouseXValue)) {
+                // Получение значения данных по координате X
                 Number xValue = lineChart.getXAxis().getValueForDisplay(mouseXValue);
-                NumberAxis yAxis = (NumberAxis) lineChart.getYAxis();
-                double minY = yAxis.getLowerBound();
-                double maxY = yAxis.getUpperBound();
 
-                // Создаем серию данных для вертикальной линии
+                // Фиксирование диапазонов осей
+                NumberAxis xAxis = (NumberAxis) lineChart.getXAxis();
+                xAxis.setAutoRanging(false);
+
+                NumberAxis yAxis = (NumberAxis) lineChart.getYAxis();
+                yAxis.setAutoRanging(false);
+
+                // Создание серии данных для вертикальной линии
                 XYChart.Series<Number, Number> verticalLineSeries = new XYChart.Series<>();
                 verticalLineSeries.setName("Vertical Line");
 
-                // Создаем точки данных для начала и конца линии
-                verticalLineSeries.getData().add(new XYChart.Data<>(xValue, minY));
-                verticalLineSeries.getData().add(new XYChart.Data<>(xValue, maxY));
+                // Добавление точек для линии
+                verticalLineSeries.getData().add(new XYChart.Data<>(xValue, yAxis.getLowerBound()));
+                verticalLineSeries.getData().add(new XYChart.Data<>(xValue, yAxis.getUpperBound()));
 
-                // Добавляем серию данных к LineChart перед стилизацией
-                lineChart.getData().add(verticalLineSeries);
+                // Добавление серии в начало списка
+                lineChart.getData().add(0, verticalLineSeries);
+
+                // *** Добавление информации о линии в chartLines ***
+                Tab currentTab = innerTabPane.getSelectionModel().getSelectedItem(); // Получить текущую внутреннюю вкладку для графика
+                chartLines.computeIfAbsent(currentTab, k -> new ArrayList<>())
+                        .add(new LineInfo(verticalLineSeries,
+                                null,
+                                xValue.doubleValue(),
+                                lineSelectionComboBox.getValue(),
+                                elementInput.getText()));
             }
         }
     }
 
-    private void handleImageViewClick(javafx.scene.input.MouseEvent event, ImageView imageView) {
+    // Обработка клика на изображении
+    private void handleImageViewClick(MouseEvent event, ImageView imageView) {
         if (event.getButton() == MouseButton.PRIMARY) {
             addPeakLine(event.getX(), imageView);
         }
@@ -145,9 +187,12 @@ public class ImageControlPanel extends HBox {
 
     // Добавляет линию для отметки пика на изображении
     public void addPeakLine(double xClick, ImageView imageView) {
+        // Создание линии
         Line peakLine = new Line();
         peakLine.setStroke(Color.BLUE);
         peakLine.setStrokeWidth(2);
+
+        // Ограничение координаты X щелчка
         final double finalXPosition = Math.max(0, Math.min(xClick, imageView.getImage().getWidth()));
 
         // Привязка startX линии к координате X щелчка с учетом масштабирования
@@ -172,8 +217,10 @@ public class ImageControlPanel extends HBox {
         if (!imageContainer.getChildren().contains(peakLine)) {
             imageContainer.getChildren().add(peakLine);
         }
+
+        // Добавление информации о линии
         imageLines.computeIfAbsent(imageProcessor.getSelectedImage(), k -> new ArrayList<>())
-                .add(new LineInfo(peakLine, finalXPosition, lineSelectionComboBox.getValue(), elementInput.getText()));
+                .add(new LineInfo(null, peakLine, finalXPosition, lineSelectionComboBox.getValue(), elementInput.getText()));
     }
 
     // Получение LineChart из активной вкладки

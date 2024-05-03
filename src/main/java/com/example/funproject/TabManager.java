@@ -6,12 +6,14 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TabManager {
@@ -51,6 +53,7 @@ public class TabManager {
         this.tabPane = tabPane;
         this.innerTableAndChartTabPanes = new HashMap<>();
         this.imageProcessors = imageProcessors;
+
     }
 
     /**
@@ -82,6 +85,7 @@ public class TabManager {
         handleAddButtonClick(controller);
 
         imageProcessors.put(newTab, imageProcessor);
+
     }
 
     /**

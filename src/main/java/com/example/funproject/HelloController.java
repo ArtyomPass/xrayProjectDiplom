@@ -4,6 +4,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Side;
 import javafx.scene.Node;
+import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -22,21 +23,22 @@ public class HelloController {
     private VBox sidebar;
     @FXML
     protected TabPane tabPane;
-    @FXML
-    private Button spectrumCalibration;
+
 
     // Вспомогательные классы для работы с данными и изображениями
     private final FileImporter fileImporter = new FileImporter();
-    private TabManager tabManager;
+    protected TabManager tabManager;
     private DataPreprocessing dataPreprocessing;
     protected SpectraAnalysis spectraAnalysis;
 
     // Хранилища данных для различных типов информации
-    public Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
+    protected Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
     private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
     private Map<Tab, ImageProcessor> imageProcessors = new HashMap<>();
-    public Map<Image, List<LineInfo>> imageLines;
 
+    // Линии для картинок и для графиков
+    protected Map<Image, List<LineInfo>> imageLines;
+    protected Map<Tab, List<LineInfo>> chartLines;
 
     protected Map<Tab, TableView<SpectralDataTable.SpectralData>> spectralDataTableViews = new HashMap<>();
     protected Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
@@ -62,6 +64,7 @@ public class HelloController {
 
         // Создаем первую вкладку при запуске приложения
         imageLines = new HashMap<>();
+        chartLines = new HashMap<>();
         handleNewTab();
     }
 
@@ -174,6 +177,8 @@ public class HelloController {
 
         // Передаем innerTabPane в visualizePeaks
         detectedPeaks.put(currentTab, spectraAnalysis.visualizePeaks(currentTab, currentInnerTabPane, series, threshold, windowSize, minPeakDistance));
+
+
     }
 
     /**
@@ -181,56 +186,19 @@ public class HelloController {
      * Отображает контекстное меню для выбора метода калибровки (в данном случае, линейная регрессия).
      */
     public void spectrumCalibration(ActionEvent actionEvent) {
-        CalibrationDialog dialog = new CalibrationDialog();
-        dialog.show(); // Отображение диалогового окна и ожидание выбора
+        // Получить выбранную вкладку
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        // Получить текущую внутреннюю вкладку и график
+        Tab currentInnerTab = tabManager.innerTableAndChartTabPanes.get(selectedTab).getSelectionModel().getSelectedItem();
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+        // Получить текущий TableView для обновления
+        TableView<SpectralDataTable.SpectralData> tableViewToUpdate = spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
 
-        // Создание контекстного меню
-        ContextMenu calibrationMenu = new ContextMenu();
-        MenuItem linearRegressionItem = new MenuItem("Линейная регрессия");
-        MenuItem twoStandardItem = new MenuItem("Метод двух стандартов");
-        calibrationMenu.getItems().addAll(linearRegressionItem, twoStandardItem);
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        // Получить линии с текущей открытой вкладки
+        List<LineInfo> lineChartInfos = chartLines.get(currentInnerTab);
+        // Получить линии с выбранного изображения
+        List<LineInfo> lineImageInfos = imageLines.get(imageProcessors.get(selectedTab).selectedImage);
 
-        // Получаем ссылку на кнопку (предполагаем, что это кнопка вызывает метод)
-        Button calibrationButton = (Button) actionEvent.getSource();
-
-        // Отображаем меню под кнопкой
-        calibrationMenu.show(calibrationButton, Side.BOTTOM, 0, 0);
-
-        // Обработчики событий для пунктов меню (пример для линейной регрессии)
-        linearRegressionItem.setOnAction(event -> {
-            TabPane currentInnerTabPane = tabManager.innerTableAndChartTabPanes.get(tabPane.getSelectionModel().getSelectedItem()); // Получаем innerTabPane
-            SpectrometerCalibration.calibrateSpectrum(currentTab,
-                    currentInnerTabPane,
-                    imageLines,
-                    spectralDataSeries,
-                    spectralDataTableViews.get(currentTab),
-                    spectraAnalysis,
-                    tabManager,
-                    tabPane);
-
-            System.out.println("Спектр отклиброваван методом линейной регрессии");
-        });
-
-        twoStandardItem.setOnAction(event -> {
-            TabPane currentInnerTabPane = tabManager.innerTableAndChartTabPanes.get(tabPane.getSelectionModel().getSelectedItem()); // Получаем innerTabPane
-            // Пример: Железо (Fe) с Co Kα1 и Co Kα2 как стандартами
-            double elementPosition = 26;  // Положение пика Fe (номер элемента в таблице Менделеева)
-            double longWavelengthStandard1 = 6930;  // Энергия Co Kα1 (keV)
-            double longWavelengthStandard2 = 6923;  // Энергия Co Kα2 (keV)
-
-            SpectrometerCalibration.calibrateWithTwoStandards(currentTab,
-                    currentInnerTabPane,
-                    spectralDataSeries,
-                    spectralDataTableViews.get(currentTab),
-                    spectraAnalysis,
-                    elementPosition,
-                    longWavelengthStandard1,
-                    longWavelengthStandard2,
-                    tabPane,
-                    tabManager);
-
-            System.out.println("Спектр откалиброван методом двух стандартов");
-        });
+        CalibrationDialog dialog = new CalibrationDialog(lineImageInfos, lineChartInfos, currentChart, tableViewToUpdate);
     }
 }
