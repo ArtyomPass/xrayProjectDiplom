@@ -199,6 +199,6 @@ public class HelloController {
         // Получить линии с выбранного изображения
         List<LineInfo> lineImageInfos = imageLines.get(imageProcessors.get(selectedTab).selectedImage);
 
-        CalibrationDialog dialog = new CalibrationDialog(lineImageInfos, lineChartInfos, currentChart, tableViewToUpdate);
+        CalibrationDialog dialog = new CalibrationDialog(selectedTab,lineImageInfos, lineChartInfos, currentChart, tableViewToUpdate);
     }
 }
