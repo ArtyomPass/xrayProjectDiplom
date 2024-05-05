@@ -40,6 +40,7 @@ public class CalibrationDialog extends Stage {
     private TextField orderStandardField;
     private TextField orderSampleField;
     private TextField dSpacingField;
+    private Label dSpacingLabel;  // Добавляем Label для межплоскостного расстояния
 
     // Метки для полей ввода порядка отражения
     private Label orderStandardLabel;
@@ -98,6 +99,9 @@ public class CalibrationDialog extends Stage {
         orderStandardLabel = new Label("Порядок отражения (стандарт):");
         orderSampleLabel = new Label("Порядок отражения (образец):");
 
+        // Создаем Label для межплоскостного расстояния
+        dSpacingLabel = new Label("Значение межплоскостного расстояния:");
+
         // Добавление элементов в VBox
         root.getChildren().addAll(
                 new Label("Метод калибровки:"),
@@ -108,6 +112,7 @@ public class CalibrationDialog extends Stage {
                 orderStandardField,
                 orderSampleLabel,
                 orderSampleField,
+                dSpacingLabel,
                 dSpacingField,
                 dispersionButton,
                 dispersionLabel, // Добавлена метка
@@ -130,15 +135,24 @@ public class CalibrationDialog extends Stage {
         show();
     }
 
-
-    // Обработчик события для кнопки "Дисперсия"
     private void handleDispersionButtonAction(ActionEvent event) {
-        boolean isVisible = !dispersionField.isVisible();
-        dispersionField.setVisible(isVisible);
-        dispersionLabel.setVisible(isVisible); // Скрываем/отображаем метку вместе с полем
+        boolean isVisible = dispersionField.isVisible();
 
+        // Сначала меняем цвет, потом делаем поля невводимыми
+        if (!isVisible) {
+            orderSampleField.setStyle("-fx-background-color: lightgrey;");
+            dSpacingField.setStyle("-fx-background-color: lightgrey;");
+        } else {
+            orderSampleField.setStyle("-fx-background-color: white;");
+            dSpacingField.setStyle("-fx-background-color: white;");
+        }
+
+        orderSampleField.setEditable(isVisible);
+        dSpacingField.setEditable(isVisible);
+
+        dispersionField.setVisible(!isVisible);
+        dispersionLabel.setVisible(!isVisible);
     }
-
     // Обновление видимости полей ввода
     private void updateInputFieldsVisibility() {
         String selectedMethod = calibrationMethodComboBox.getValue();
@@ -150,6 +164,7 @@ public class CalibrationDialog extends Stage {
         orderStandardField.setVisible(isTwoStandardsMethod);
         orderSampleField.setVisible(isTwoStandardsMethod);
         dSpacingField.setVisible(isTwoStandardsMethod);
+        dSpacingLabel.setVisible(isTwoStandardsMethod);
 
         // Управление видимостью меток
         orderStandardLabel.setVisible(isTwoStandardsMethod);
