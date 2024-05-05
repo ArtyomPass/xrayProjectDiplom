@@ -39,6 +39,7 @@ public class TabManager {
     private Button smoothButton;
     private Button correctionButton;
     private Button statisticsButton;
+    private Button seriesManagementButton; // Новая кнопка для управления сериями данных
 
     protected ImageView mainImageView;
     protected TilePane thumbnailsTilePane;
@@ -111,6 +112,8 @@ public class TabManager {
         correctionButton.setOnAction(event -> handleCorrectionButtonClick(controller));
         statisticsButton = new Button("Статистика");
         statisticsButton.setOnAction(event -> handleStatisticsButtonClick(controller));
+        seriesManagementButton = new Button("Управление сериями");
+        seriesManagementButton.setOnAction(event -> handleSeriesManagementButtonClick(controller));
 
         // Настройка внешнего вида кнопок
         addChartButton.setPrefWidth(150);
@@ -129,10 +132,11 @@ public class TabManager {
         smoothButton.getStyleClass().add("control-button");
         correctionButton.getStyleClass().add("control-button");
         statisticsButton.getStyleClass().add("control-button");
+        seriesManagementButton.getStyleClass().add("control-button");
 
         // Размещение кнопок в VBox
         VBox buttonsVBox = new VBox(addChartButton, normalizeButton, interpolateButton,
-                backgroundButton, smoothButton, correctionButton, statisticsButton);
+                backgroundButton, smoothButton, correctionButton, statisticsButton, seriesManagementButton);
         buttonsVBox.setSpacing(5);
 
         // Создание внутреннего TabPane для графиков и инициализация TableView для новой вкладки
@@ -260,6 +264,16 @@ public class TabManager {
         // Создать и показать окно статистики
         StatisticsWindow statisticsWindow = new StatisticsWindow(controller, currentChart);
         statisticsWindow.show();
+    }
+
+    private void handleSeriesManagementButtonClick(HelloController controller) {
+        // Получить активную вкладку и график
+        Tab currentInnerTab = innerTableAndChartTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+        // Создать и показать окно управления сериями
+        SeriesManagementWindow seriesManagementWindow = new SeriesManagementWindow(currentChart);
+        seriesManagementWindow.show();
     }
 
     /**
