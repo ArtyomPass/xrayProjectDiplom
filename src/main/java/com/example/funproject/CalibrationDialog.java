@@ -18,13 +18,12 @@ import java.util.stream.Collectors;
 
 public class CalibrationDialog extends Stage {
 
-    // Элементы пользовательского интерфейса
+    // UI элементы
     private ComboBox<String> calibrationMethodComboBox;
     private RadioButton linesFromPhotoRadioButton;
     private RadioButton linesFromSpectrumRadioButton;
     private ToggleGroup linesSourceToggleGroup;
     private Button calibrateButton;
-    private Button cancelButton;
 
     // Данные для калибровки
     private List<LineInfo> lineImageInfos;
@@ -43,7 +42,6 @@ public class CalibrationDialog extends Stage {
                              List<LineInfo> lineChartInfos,
                              LineChart<Number, Number> currentChart,
                              TableView<SpectralDataTable.SpectralData> tableView) {
-
         this.lineImageInfos = lineImageInfos;
         this.lineChartInfos = lineChartInfos;
         this.currentChart = currentChart;
@@ -63,20 +61,16 @@ public class CalibrationDialog extends Stage {
         linesSourceToggleGroup = new ToggleGroup();
         linesFromPhotoRadioButton = new RadioButton("Линии с фотографии");
         linesFromPhotoRadioButton.setToggleGroup(linesSourceToggleGroup);
-        linesFromPhotoRadioButton.setVisible(false);
         linesFromSpectrumRadioButton = new RadioButton("Линии со спектра");
         linesFromSpectrumRadioButton.setToggleGroup(linesSourceToggleGroup);
-        linesFromSpectrumRadioButton.setVisible(false);
 
         // Кнопки
         calibrateButton = new Button("Калибровать");
-        cancelButton = new Button("Отмена");
 
         // Кнопка и поле для ввода дисперсии
         dispersionButton = new Button("Дисперсия");
         dispersionField = new TextField();
         dispersionField.setPromptText("Значение дисперсии");
-        dispersionField.setVisible(false);
 
         // Добавление элементов в VBox
         root.getChildren().addAll(
@@ -86,8 +80,7 @@ public class CalibrationDialog extends Stage {
                 linesFromSpectrumRadioButton,
                 dispersionButton,
                 dispersionField,
-                calibrateButton,
-                cancelButton
+                calibrateButton
         );
 
         // Установка начальной видимости полей ввода
@@ -96,7 +89,6 @@ public class CalibrationDialog extends Stage {
         // Обработчики событий
         calibrationMethodComboBox.setOnAction(this::handleComboBoxAction);
         calibrateButton.setOnAction(this::performCalibration);
-        // Обработчик событий для кнопки дисперсии
         dispersionButton.setOnAction(this::handleDispersionButtonAction);
 
         // Создание сцены и отображение окна
@@ -114,10 +106,10 @@ public class CalibrationDialog extends Stage {
     // Обновление видимости полей ввода
     private void updateInputFieldsVisibility() {
         String selectedMethod = calibrationMethodComboBox.getValue();
-        linesFromPhotoRadioButton.setVisible("Два стандарта".equals(selectedMethod));
-        linesFromSpectrumRadioButton.setVisible("Два стандарта".equals(selectedMethod));
+        linesFromPhotoRadioButton.setVisible(true);
+        linesFromSpectrumRadioButton.setVisible(true);
         dispersionButton.setVisible("Два стандарта".equals(selectedMethod));
-        dispersionField.setVisible(dispersionButton.isVisible() && dispersionField.isVisible()); // Только если кнопка видна
+        dispersionField.setVisible(false);
     }
 
     // Выполнение калибровки
@@ -128,27 +120,21 @@ public class CalibrationDialog extends Stage {
         } else if ("Линейная регрессия".equals(selectedMethod)) {
             performLinearRegressionCalibration();
         }
+        this.close();
     }
 
     // Калибровка методом 2х стандартов
     private void performTwoStandardsCalibration() {
         Map<String, Map<String, Double>> elementLinesEnergies = readElementLinesEnergiesFromFile("src/main/java/com/example/funproject/xray_lines_3d_metals.txt");
 
-        // 1. Проверка выбранного метода калибровки
+        // Калибровка с одним стандартом и дисперсией
         if (dispersionButton.isVisible() && dispersionField.isVisible()) {
-            // Калибровка с одним стандартом и дисперсией
             try {
                 double dispersion = Double.parseDouble(dispersionField.getText());
 
-                // 2. Поиск Kα1 линии для одного элемента
+                // Поиск Kα1 линии для одного элемента
                 LineInfo standard1Line = null;
-                List<LineInfo> lines;
-                if (linesFromPhotoRadioButton.isSelected()) {
-                    lines = lineImageInfos;
-                } else {
-                    lines = lineChartInfos;
-                }
-
+                List<LineInfo> lines = linesFromPhotoRadioButton.isSelected() ? lineImageInfos : lineChartInfos;
                 for (LineInfo line : lines) {
                     if (line.getPeakType().equals("Ka1") && standard1Line == null) {
                         standard1Line = line;
@@ -156,16 +142,15 @@ public class CalibrationDialog extends Stage {
                     }
                 }
 
-                // 3. Обработка ошибок и получение энергии линии
+                // Обработка ошибок и получение энергии линии
                 if (standard1Line == null) {
-                    System.err.println("Не найдена Ka1 линия. Введите Ka1 линию.");
+                    System.err.println("Не найдена Ka1 линия.");
                     return;
                 }
-
                 double energyStandard1 = elementLinesEnergies.get(standard1Line.getElementName()).get("Ka1");
                 int pixelStandard1 = (int) standard1Line.getXPosition();
 
-                // 4. Калибровка серии данных "Intensities"
+                // Калибровка серии данных "Intensities"
                 Optional<XYChart.Series<Number, Number>> intensitiesSeriesOptional = currentChart.getData().stream()
                         .filter(series -> series.getName().equals("Intensities"))
                         .findFirst();
@@ -174,24 +159,17 @@ public class CalibrationDialog extends Stage {
                     double[] positions = intensitiesSeries.getData().stream()
                             .mapToDouble(data -> data.getXValue().doubleValue())
                             .toArray();
-
                     double[] calibratedEnergies = calibrateWithDispersion(energyStandard1, dispersion, pixelStandard1, positions);
 
-                    // 5. Создание новой серии с откалиброванными энергиями
+                    // Создание новой серии с откалиброванными энергиями
                     XYChart.Series<Number, Number> calibratedSeries = new XYChart.Series<>();
-                    calibratedSeries.setName("Calibrated Spectrum (Dispersion)");
+                    calibratedSeries.setName("Intensities");
                     for (int i = 0; i < positions.length; i++) {
                         calibratedSeries.getData().add(new XYChart.Data<>(calibratedEnergies[i], intensitiesSeries.getData().get(i).getYValue()));
                     }
 
-                    // 6. Обновление графика и таблицы
-                    currentChart.getData().remove(intensitiesSeries);
-                    currentChart.getData().add(calibratedSeries);
-                    NumberAxis xAxis = (NumberAxis) currentChart.getXAxis();
-                    xAxis.setAutoRanging(false);
-                    xAxis.setLowerBound(calibratedEnergies[0]);
-                    xAxis.setUpperBound(calibratedEnergies[calibratedEnergies.length - 1]);
-                    SpectralDataTable.updateTableViewInTab(selectedTab, calibratedSeries.getData(), tableView);
+                    // Обновление графика и таблицы
+                    updateChartAndTable(intensitiesSeries, calibratedSeries);
                     System.out.println("Серия данных 'Intensities' откалибрована с дисперсией.");
                 } else {
                     System.err.println("Серия данных 'Intensities' не найдена!");
@@ -200,15 +178,10 @@ public class CalibrationDialog extends Stage {
                 System.err.println("Некорректное значение дисперсии.");
             }
         } else {
-            // 2. Калибровка с двумя стандартами
-            List<LineInfo> lines;
-            if (linesFromPhotoRadioButton.isSelected()) {
-                lines = lineImageInfos;
-            } else {
-                lines = lineChartInfos;
-            }
+            // Калибровка с двумя стандартами
+            List<LineInfo> lines = linesFromPhotoRadioButton.isSelected() ? lineImageInfos : lineChartInfos;
 
-            // 3. Поиск Kα1 и Kβ1 линий для двух элементов
+            // Поиск Kα1 и Kβ1 линий для двух элементов
             LineInfo standard1Line = null;
             LineInfo standard2Line = null;
             for (LineInfo line : lines) {
@@ -224,15 +197,15 @@ public class CalibrationDialog extends Stage {
                 }
             }
 
-            // 4. Обработка ошибок и получение энергий линий
+            // Обработка ошибок и получение энергий линий
             if (standard1Line == null || standard2Line == null) {
-                System.err.println("Не найдены Kα1 и Kβ1 линии для двух элементов, Введите сначала Ka1, Потом Kb1");
+                System.err.println("Не найдены Kα1 и Kβ1 линии для двух элементов.");
                 return;
             }
             double energyStandard1 = elementLinesEnergies.get(standard1Line.getElementName()).get("Ka1");
             double energyStandard2 = elementLinesEnergies.get(standard2Line.getElementName()).get("Kb1");
 
-            // 5. Калибровка серии данных "Intensities"
+            // Калибровка серии данных "Intensities"
             Optional<XYChart.Series<Number, Number>> intensitiesSeriesOptional = currentChart.getData().stream()
                     .filter(series -> series.getName().equals("Intensities"))
                     .findFirst();
@@ -246,21 +219,15 @@ public class CalibrationDialog extends Stage {
                 double[] calibratedEnergies = calibrateWithTwoPoints(energyStandard1, pixelStandard1,
                         energyStandard2, pixelSampleKBeta1, positions);
 
-                // 6. Создание новой серии с откалиброванными энергиями
+                // Создание новой серии с откалиброванными энергиями
                 XYChart.Series<Number, Number> calibratedSeries = new XYChart.Series<>();
-                calibratedSeries.setName("Calibrated Spectrum (Two Standards)");
+                calibratedSeries.setName("Intensities");
                 for (int i = 0; i < positions.length; i++) {
                     calibratedSeries.getData().add(new XYChart.Data<>(calibratedEnergies[i], intensitiesSeries.getData().get(i).getYValue()));
                 }
 
-                // 7. Обновление графика и таблицы
-                currentChart.getData().remove(intensitiesSeries);
-                currentChart.getData().add(calibratedSeries);
-                NumberAxis xAxis = (NumberAxis) currentChart.getXAxis();
-                xAxis.setAutoRanging(false);
-                xAxis.setLowerBound(calibratedEnergies[0]);
-                xAxis.setUpperBound(calibratedEnergies[calibratedEnergies.length - 1]);
-                SpectralDataTable.updateTableViewInTab(selectedTab, calibratedSeries.getData(), tableView);
+                // Обновление графика и таблицы
+                updateChartAndTable(intensitiesSeries, calibratedSeries);
                 System.out.println("Серия данных 'Intensities' откалибрована методом двух стандартов.");
             } else {
                 System.err.println("Серия данных 'Intensities' не найдена!");
@@ -272,16 +239,9 @@ public class CalibrationDialog extends Stage {
     private static double[] calibrateWithTwoPoints(double energyStandard, int pixelStandard,
                                                    double energySampleKBeta1, int pixelSampleKBeta1,
                                                    double[] spectrum) {
-        // Вычисление разницы в пикселях между Kα1 и Kβ1
         int pixelDifference = Math.abs(pixelSampleKBeta1 - pixelStandard);
-
-        // Вычисление разницы энергий между Kα1 и Kβ1
         double energyDifference = Math.abs(energySampleKBeta1 - energyStandard);
-
-        // Вычисление угловой дисперсии
         double angularDispersion = pixelDifference / energyDifference;
-
-        // Вычисление энергетической дисперсии
         double energyDispersion = 1 / angularDispersion;
 
         // Калибровка спектра
@@ -302,18 +262,14 @@ public class CalibrationDialog extends Stage {
         return calibratedSpectrum;
     }
 
-
     // Калибровка методом линейной регрессии
     private void performLinearRegressionCalibration() {
         Map<String, Map<String, Double>> elementLinesEnergies = readElementLinesEnergiesFromFile("src/main/java/com/example/funproject/xray_lines_3d_metals.txt");
-        List<LineInfo> lines;
+        List<LineInfo> lines = linesFromPhotoRadioButton.isSelected() ? lineImageInfos : lineChartInfos;
+
+        // Подготовка данных для линейной регрессии
         List<Double> knownPositions = new ArrayList<>();
         List<Double> knownEnergies = new ArrayList<>();
-        if (linesFromPhotoRadioButton.isSelected()) {
-            lines = lineImageInfos;
-        } else {
-            lines = lineChartInfos;
-        }
         for (LineInfo lineInfo : lines) {
             String elementName = lineInfo.getElementName();
             String peakType = lineInfo.getPeakType();
@@ -326,6 +282,7 @@ public class CalibrationDialog extends Stage {
             }
         }
 
+        // Вычисление калибровочных коэффициентов
         double[] xValues = knownPositions.stream().mapToDouble(Double::doubleValue).toArray();
         double[] yValues = knownEnergies.stream().mapToDouble(Double::doubleValue).toArray();
         double[] calibrationParams = linearRegression(xValues, yValues);
@@ -354,7 +311,7 @@ public class CalibrationDialog extends Stage {
         xAxis.setLowerBound(minCalibratedX);
         xAxis.setUpperBound(maxCalibratedX);
         xAxis.setAutoRanging(false);
-        double tickUnit = (maxCalibratedX - minCalibratedX) / 10; // пример: 10 меток
+        double tickUnit = (maxCalibratedX - minCalibratedX) / 10;
         xAxis.setTickUnit(tickUnit);
     }
 
@@ -389,7 +346,7 @@ public class CalibrationDialog extends Stage {
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\t");  // Разделяем строку по табуляции
+                String[] parts = line.split("\t");
                 String elementName = parts[0];
                 String lineType = parts[1];
                 double energy = Double.parseDouble(parts[2]);
@@ -412,5 +369,20 @@ public class CalibrationDialog extends Stage {
     // Влияет на отображение нодов в зависимости от комбобокса
     private void handleComboBoxAction(ActionEvent event) {
         updateInputFieldsVisibility();
+    }
+
+    // Обновление графика и таблицы
+    private void updateChartAndTable(XYChart.Series<Number, Number> oldSeries, XYChart.Series<Number, Number> newSeries) {
+        currentChart.getData().remove(oldSeries);
+        currentChart.getData().add(newSeries);
+        NumberAxis xAxis = (NumberAxis) currentChart.getXAxis();
+        xAxis.setAutoRanging(false);
+        double[] calibratedEnergies = newSeries.getData().stream()
+                .mapToDouble(data -> data.getXValue().doubleValue())
+                .toArray();
+        xAxis.setLowerBound(calibratedEnergies[0]);
+        xAxis.setUpperBound(calibratedEnergies[calibratedEnergies.length - 1]);
+        SpectralDataTable.updateTableViewInTab(selectedTab, newSeries.getData(), tableView);
+        removeSeriesByName(currentChart, "Vertical Line");
     }
 }
