@@ -52,9 +52,9 @@ public class SpectraAnalysis {
         XYChart.Series<Number, Number> series = null;
         if (chart != null && image != null) {
             series = processImageForSplineData(image);
-            chart.getData().clear();
+            // chart.getData().clear();
             chart.getData().add(series);
-            series.getNode().setStyle("-fx-stroke: gray;");
+            // series.getNode().setStyle("-fx-stroke: gray;");
             chart.setCreateSymbols(false); // Отключаем создание символов
         }
         return series;

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 public class CalibrationDialog extends Stage {
 
+
     // UI элементы
     private ComboBox<String> calibrationMethodComboBox;
     private RadioButton linesFromPhotoRadioButton;
@@ -32,9 +33,17 @@ public class CalibrationDialog extends Stage {
     private TableView<SpectralDataTable.SpectralData> tableView;
     private Tab selectedTab;
 
-    // Поля для ввода дисперсии
+    // Поля для ввода дисперсии, порядка отражения и межплоскостного расстояния
     private Button dispersionButton;
+    private Label dispersionLabel;
     private TextField dispersionField;
+    private TextField orderStandardField;
+    private TextField orderSampleField;
+    private TextField dSpacingField;
+
+    // Метки для полей ввода порядка отражения
+    private Label orderStandardLabel;
+    private Label orderSampleLabel;
 
     // Конструктор
     public CalibrationDialog(Tab selectedTab,
@@ -64,13 +73,30 @@ public class CalibrationDialog extends Stage {
         linesFromSpectrumRadioButton = new RadioButton("Линии со спектра");
         linesFromSpectrumRadioButton.setToggleGroup(linesSourceToggleGroup);
 
+        // Поля для ввода порядка отражения и межплоскостного расстояния
+        orderStandardField = new TextField();
+        orderStandardField.setPromptText("Порядок отражения для стандарта");
+        orderStandardField.setText("1"); // Устанавливаем начальное значение
+
+        orderSampleField = new TextField();
+        orderSampleField.setPromptText("Порядок отражения для образца");
+        orderSampleField.setText("1"); // Устанавливаем начальное значение
+
+        dSpacingField = new TextField();
+        dSpacingField.setPromptText("Значение межплоскостного расстояния");
+        dSpacingField.setText("2.38"); // Устанавливаем начальное значение
+
+        dispersionLabel = new Label("Значение дисперсии:");
+
         // Кнопки
         calibrateButton = new Button("Калибровать");
-
-        // Кнопка и поле для ввода дисперсии
         dispersionButton = new Button("Дисперсия");
         dispersionField = new TextField();
         dispersionField.setPromptText("Значение дисперсии");
+
+        // Инициализация меток порядка отражения
+        orderStandardLabel = new Label("Порядок отражения (стандарт):");
+        orderSampleLabel = new Label("Порядок отражения (образец):");
 
         // Добавление элементов в VBox
         root.getChildren().addAll(
@@ -78,7 +104,13 @@ public class CalibrationDialog extends Stage {
                 calibrationMethodComboBox,
                 linesFromPhotoRadioButton,
                 linesFromSpectrumRadioButton,
+                orderStandardLabel,
+                orderStandardField,
+                orderSampleLabel,
+                orderSampleField,
+                dSpacingField,
                 dispersionButton,
+                dispersionLabel, // Добавлена метка
                 dispersionField,
                 calibrateButton
         );
@@ -98,9 +130,13 @@ public class CalibrationDialog extends Stage {
         show();
     }
 
+
     // Обработчик события для кнопки "Дисперсия"
     private void handleDispersionButtonAction(ActionEvent event) {
-        dispersionField.setVisible(!dispersionField.isVisible());
+        boolean isVisible = !dispersionField.isVisible();
+        dispersionField.setVisible(isVisible);
+        dispersionLabel.setVisible(isVisible); // Скрываем/отображаем метку вместе с полем
+
     }
 
     // Обновление видимости полей ввода
@@ -108,10 +144,22 @@ public class CalibrationDialog extends Stage {
         String selectedMethod = calibrationMethodComboBox.getValue();
         linesFromPhotoRadioButton.setVisible(true);
         linesFromSpectrumRadioButton.setVisible(true);
-        dispersionButton.setVisible("Два стандарта".equals(selectedMethod));
-        dispersionField.setVisible(false);
-    }
 
+        // Отображаем поля и метки только для метода "Два стандарта"
+        boolean isTwoStandardsMethod = "Два стандарта".equals(selectedMethod);
+        orderStandardField.setVisible(isTwoStandardsMethod);
+        orderSampleField.setVisible(isTwoStandardsMethod);
+        dSpacingField.setVisible(isTwoStandardsMethod);
+
+        // Управление видимостью меток
+        orderStandardLabel.setVisible(isTwoStandardsMethod);
+        orderSampleLabel.setVisible(isTwoStandardsMethod);
+        dispersionButton.setVisible(isTwoStandardsMethod);
+
+        // Скрываем поле ввода дисперсии и метку
+        dispersionField.setVisible(false);
+        dispersionLabel.setVisible(false);
+    }
     // Выполнение калибровки
     private void performCalibration(ActionEvent actionEvent) {
         String selectedMethod = calibrationMethodComboBox.getValue();
@@ -126,6 +174,11 @@ public class CalibrationDialog extends Stage {
     // Калибровка методом 2х стандартов
     private void performTwoStandardsCalibration() {
         Map<String, Map<String, Double>> elementLinesEnergies = readElementLinesEnergiesFromFile("src/main/java/com/example/funproject/xray_lines_3d_metals.txt");
+
+        // Получение значений порядка отражения и межплоскостного расстояния
+        int orderStandard = Integer.parseInt(orderStandardField.getText());
+        int orderSample = Integer.parseInt(orderSampleField.getText());
+        double dSpacing = Double.parseDouble(dSpacingField.getText());
 
         // Калибровка с одним стандартом и дисперсией
         if (dispersionButton.isVisible() && dispersionField.isVisible()) {
@@ -159,7 +212,7 @@ public class CalibrationDialog extends Stage {
                     double[] positions = intensitiesSeries.getData().stream()
                             .mapToDouble(data -> data.getXValue().doubleValue())
                             .toArray();
-                    double[] calibratedEnergies = calibrateWithDispersion(energyStandard1, dispersion, pixelStandard1, positions);
+                    double[] calibratedEnergies = calibrateWithDispersion(energyStandard1, dispersion, pixelStandard1, positions, orderStandard);
 
                     // Создание новой серии с откалиброванными энергиями
                     XYChart.Series<Number, Number> calibratedSeries = new XYChart.Series<>();
@@ -216,8 +269,10 @@ public class CalibrationDialog extends Stage {
                         .toArray();
                 int pixelStandard1 = (int) standard1Line.getXPosition();
                 int pixelSampleKBeta1 = (int) standard2Line.getXPosition();
+
+                // Вызов метода калибровки с учётом порядка отражения и межплоскостного расстояния
                 double[] calibratedEnergies = calibrateWithTwoPoints(energyStandard1, pixelStandard1,
-                        energyStandard2, pixelSampleKBeta1, positions);
+                        energyStandard2, pixelSampleKBeta1, positions, orderStandard, orderSample, dSpacing);
 
                 // Создание новой серии с откалиброванными энергиями
                 XYChart.Series<Number, Number> calibratedSeries = new XYChart.Series<>();
@@ -238,26 +293,42 @@ public class CalibrationDialog extends Stage {
     // Метод калибровки с двумя стандартами (Kα1 и Kβ1)
     private static double[] calibrateWithTwoPoints(double energyStandard, int pixelStandard,
                                                    double energySampleKBeta1, int pixelSampleKBeta1,
-                                                   double[] spectrum) {
-        int pixelDifference = Math.abs(pixelSampleKBeta1 - pixelStandard);
-        double energyDifference = Math.abs(energySampleKBeta1 - energyStandard);
-        double angularDispersion = pixelDifference / energyDifference;
+                                                   double[] spectrum, int orderStandard, int orderSample, double dSpacing) {
+
+        // Вычисление длин волн по энергиям (hc/E)
+        double wavelengthStandard = 1239.84193 / energyStandard;
+        double wavelengthSample = 1239.84193 / energySampleKBeta1;
+
+        // Учёт порядка отражения в законе Брэгга-Вульфа: nλ = 2d sin θ
+        double thetaStandard = Math.asin(orderStandard * wavelengthStandard / (2 * dSpacing));
+        double thetaSample = Math.asin(orderSample * wavelengthSample / (2 * dSpacing));
+
+        // Вычисление угловой дисперсии
+        double angularDispersion = Math.abs(thetaSample - thetaStandard) / Math.abs(pixelSampleKBeta1 - pixelStandard);
+
+        // Вычисление энергетической дисперсии
         double energyDispersion = 1 / angularDispersion;
 
         // Калибровка спектра
         double[] calibratedSpectrum = new double[spectrum.length];
         for (int i = 0; i < spectrum.length; i++) {
-            calibratedSpectrum[i] = energyStandard + (spectrum[i] - pixelStandard) * energyDispersion;
+            double theta = thetaStandard + (spectrum[i] - pixelStandard) * angularDispersion;
+            double wavelength = 2 * dSpacing * Math.sin(theta) / orderStandard; // Предполагаем одинаковый порядок отражения
+            calibratedSpectrum[i] = 1239.84193 / wavelength;
         }
         return calibratedSpectrum;
     }
 
     // Метод калибровки с одним стандартом и дисперсией
-    private static double[] calibrateWithDispersion(double energyStandard, double dispersion, int pixelStandard, double[] spectrum) {
-        // Калибровка спектра
+    private static double[] calibrateWithDispersion(double energyStandard, double measuredDispersion,
+                                                    int pixelStandard, double[] spectrum, int order) {
+        // Учёт порядка отражения для получения истинной дисперсии
+        double trueDispersion = measuredDispersion / order;
+
+        // Калибровка спектра с использованием истинной дисперсии
         double[] calibratedSpectrum = new double[spectrum.length];
         for (int i = 0; i < spectrum.length; i++) {
-            calibratedSpectrum[i] = energyStandard + (spectrum[i] - pixelStandard) * dispersion;
+            calibratedSpectrum[i] = energyStandard + (spectrum[i] - pixelStandard) * trueDispersion;
         }
         return calibratedSpectrum;
     }
