@@ -21,30 +21,6 @@ public class SpectraAnalysis {
         // Empty
     }
 
-    public List<XYChart.Data<Number, Number>> visualizePeaks(Tab tab,
-                                                             TabPane innerTabPane,
-                                                             XYChart.Series<Number, Number> series,
-                                                             double threshold,
-                                                             int windowSize,
-                                                             double minPeakDistance) {
-        LineChart<Number, Number> chart = getLineChartFromTab(tab, innerTabPane); // Используем innerTabPane для поиска
-        List<XYChart.Data<Number, Number>> detectedPeaks = new ArrayList<>();
-        if (chart != null && series != null) {
-            detectedPeaks = detectPeaks(series, threshold, windowSize, minPeakDistance);
-            for (XYChart.Data<Number, Number> peak : detectedPeaks) {
-                XYChart.Series<Number, Number> peakSeries = new XYChart.Series<>();
-                peakSeries.getData().add(new XYChart.Data<>(peak.getXValue(), peak.getYValue()));
-                Node peakNode = new Circle(4);
-                peakNode.setStyle("-fx-fill: red;");
-                peakSeries.getData().get(0).setNode(peakNode);
-                chart.getData().add(peakSeries);
-                chart.setLegendVisible(false);
-                chart.setCreateSymbols(false);
-            }
-        }
-        return detectedPeaks;
-    }
-
     public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab,
                                                                     Image image,
                                                                     TabPane innerTabPane) {

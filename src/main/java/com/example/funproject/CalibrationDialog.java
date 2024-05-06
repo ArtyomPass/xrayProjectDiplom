@@ -18,21 +18,18 @@ import java.util.stream.Collectors;
 
 public class CalibrationDialog extends Stage {
 
-
     // UI элементы
     private ComboBox<String> calibrationMethodComboBox;
     private RadioButton linesFromPhotoRadioButton;
     private RadioButton linesFromSpectrumRadioButton;
     private ToggleGroup linesSourceToggleGroup;
     private Button calibrateButton;
-
     // Данные для калибровки
     private List<LineInfo> lineImageInfos;
     private List<LineInfo> lineChartInfos;
     private LineChart<Number, Number> currentChart;
     private TableView<SpectralDataTable.SpectralData> tableView;
     private Tab selectedTab;
-
     // Поля для ввода дисперсии, порядка отражения и межплоскостного расстояния
     private Button dispersionButton;
     private Label dispersionLabel;
@@ -40,8 +37,7 @@ public class CalibrationDialog extends Stage {
     private TextField orderStandardField;
     private TextField orderSampleField;
     private TextField dSpacingField;
-    private Label dSpacingLabel;  // Добавляем Label для межплоскостного расстояния
-
+    private Label dSpacingLabel;
     // Метки для полей ввода порядка отражения
     private Label orderStandardLabel;
     private Label orderSampleLabel;
@@ -65,9 +61,9 @@ public class CalibrationDialog extends Stage {
         // Комбобокс для выбора метода калибровки
         calibrationMethodComboBox = new ComboBox<>();
         calibrationMethodComboBox.getItems().addAll("Два стандарта", "Линейная регрессия");
-        calibrationMethodComboBox.setValue("Два стандарта"); // Значение по умолчанию
+        calibrationMethodComboBox.setValue("Два стандарта");
 
-        // Радиокнопки для выбора источника линий (изначально скрыты)
+        // Радиокнопки для выбора источника линий
         linesSourceToggleGroup = new ToggleGroup();
         linesFromPhotoRadioButton = new RadioButton("Линии с фотографии");
         linesFromPhotoRadioButton.setToggleGroup(linesSourceToggleGroup);
@@ -77,16 +73,13 @@ public class CalibrationDialog extends Stage {
         // Поля для ввода порядка отражения и межплоскостного расстояния
         orderStandardField = new TextField();
         orderStandardField.setPromptText("Порядок отражения для стандарта");
-        orderStandardField.setText("1"); // Устанавливаем начальное значение
-
+        orderStandardField.setText("1");
         orderSampleField = new TextField();
         orderSampleField.setPromptText("Порядок отражения для образца");
-        orderSampleField.setText("1"); // Устанавливаем начальное значение
-
+        orderSampleField.setText("1");
         dSpacingField = new TextField();
         dSpacingField.setPromptText("Значение межплоскостного расстояния");
-        dSpacingField.setText("2.38"); // Устанавливаем начальное значение
-
+        dSpacingField.setText("2.38");
         dispersionLabel = new Label("Значение дисперсии:");
 
         // Кнопки
@@ -99,7 +92,7 @@ public class CalibrationDialog extends Stage {
         orderStandardLabel = new Label("Порядок отражения (стандарт):");
         orderSampleLabel = new Label("Порядок отражения (образец):");
 
-        // Создаем Label для межплоскостного расстояния
+        // Label для межплоскостного расстояния
         dSpacingLabel = new Label("Значение межплоскостного расстояния:");
 
         // Добавление элементов в VBox
@@ -115,7 +108,7 @@ public class CalibrationDialog extends Stage {
                 dSpacingLabel,
                 dSpacingField,
                 dispersionButton,
-                dispersionLabel, // Добавлена метка
+                dispersionLabel,
                 dispersionField,
                 calibrateButton
         );
@@ -137,7 +130,6 @@ public class CalibrationDialog extends Stage {
 
     private void handleDispersionButtonAction(ActionEvent event) {
         boolean isVisible = dispersionField.isVisible();
-
         // Сначала меняем цвет, потом делаем поля невводимыми
         if (!isVisible) {
             orderSampleField.setStyle("-fx-background-color: lightgrey;");
@@ -146,35 +138,32 @@ public class CalibrationDialog extends Stage {
             orderSampleField.setStyle("-fx-background-color: white;");
             dSpacingField.setStyle("-fx-background-color: white;");
         }
-
         orderSampleField.setEditable(isVisible);
         dSpacingField.setEditable(isVisible);
-
         dispersionField.setVisible(!isVisible);
         dispersionLabel.setVisible(!isVisible);
     }
+
     // Обновление видимости полей ввода
     private void updateInputFieldsVisibility() {
         String selectedMethod = calibrationMethodComboBox.getValue();
         linesFromPhotoRadioButton.setVisible(true);
         linesFromSpectrumRadioButton.setVisible(true);
-
         // Отображаем поля и метки только для метода "Два стандарта"
         boolean isTwoStandardsMethod = "Два стандарта".equals(selectedMethod);
         orderStandardField.setVisible(isTwoStandardsMethod);
         orderSampleField.setVisible(isTwoStandardsMethod);
         dSpacingField.setVisible(isTwoStandardsMethod);
         dSpacingLabel.setVisible(isTwoStandardsMethod);
-
         // Управление видимостью меток
         orderStandardLabel.setVisible(isTwoStandardsMethod);
         orderSampleLabel.setVisible(isTwoStandardsMethod);
         dispersionButton.setVisible(isTwoStandardsMethod);
-
         // Скрываем поле ввода дисперсии и метку
         dispersionField.setVisible(false);
         dispersionLabel.setVisible(false);
     }
+
     // Выполнение калибровки
     private void performCalibration(ActionEvent actionEvent) {
         String selectedMethod = calibrationMethodComboBox.getValue();
@@ -191,18 +180,37 @@ public class CalibrationDialog extends Stage {
         Map<String, Map<String, Double>> elementLinesEnergies = readElementLinesEnergiesFromFile("src/main/java/com/example/funproject/xray_lines_3d_metals.txt");
 
         // Получение значений порядка отражения и межплоскостного расстояния
-        int orderStandard = Integer.parseInt(orderStandardField.getText());
-        int orderSample = Integer.parseInt(orderSampleField.getText());
-        double dSpacing = Double.parseDouble(dSpacingField.getText());
+        int orderStandard;
+        int orderSample;
+        double dSpacing;
+        try {
+            orderStandard = Integer.parseInt(orderStandardField.getText());
+            orderSample = Integer.parseInt(orderSampleField.getText());
+            dSpacing = Double.parseDouble(dSpacingField.getText());
+            if (orderStandard <= 0 || orderSample <= 0 || dSpacing <= 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException e) {
+            showErrorDialog("Ошибка ввода",
+                    "Некорректные значения порядка отражения или межплоскостного расстояния.");
+            return;
+        }
 
         // Калибровка с одним стандартом и дисперсией
         if (dispersionButton.isVisible() && dispersionField.isVisible()) {
             try {
                 double dispersion = Double.parseDouble(dispersionField.getText());
+                if (dispersion <= 0) {
+                    throw new NumberFormatException();
+                }
 
                 // Поиск Kα1 линии для одного элемента
                 LineInfo standard1Line = null;
                 List<LineInfo> lines = linesFromPhotoRadioButton.isSelected() ? lineImageInfos : lineChartInfos;
+                if (lines == null) {
+                    showErrorDialog("Ошибка калибровки", "Список линий не инициализирован.");
+                    return;
+                }
                 for (LineInfo line : lines) {
                     if (line.getPeakType().equals("Ka1") && standard1Line == null) {
                         standard1Line = line;
@@ -212,7 +220,7 @@ public class CalibrationDialog extends Stage {
 
                 // Обработка ошибок и получение энергии линии
                 if (standard1Line == null) {
-                    System.err.println("Не найдена Ka1 линия.");
+                    showErrorDialog("Ошибка калибровки", "Не найдена Ka1 линия.");
                     return;
                 }
                 double energyStandard1 = elementLinesEnergies.get(standard1Line.getElementName()).get("Ka1");
@@ -240,14 +248,18 @@ public class CalibrationDialog extends Stage {
                     updateChartAndTable(intensitiesSeries, calibratedSeries);
                     System.out.println("Серия данных 'Intensities' откалибрована с дисперсией.");
                 } else {
-                    System.err.println("Серия данных 'Intensities' не найдена!");
+                    showErrorDialog("Ошибка калибровки", "Серия данных 'Intensities' не найдена!");
                 }
             } catch (NumberFormatException e) {
-                System.err.println("Некорректное значение дисперсии.");
+                showErrorDialog("Ошибка ввода", "Некорректное значение дисперсии.");
             }
         } else {
             // Калибровка с двумя стандартами
             List<LineInfo> lines = linesFromPhotoRadioButton.isSelected() ? lineImageInfos : lineChartInfos;
+            if (lines == null) {
+                showErrorDialog("Ошибка калибровки", "Список линий не инициализирован.");
+                return;
+            }
 
             // Поиск Kα1 и Kβ1 линий для двух элементов
             LineInfo standard1Line = null;
@@ -267,7 +279,7 @@ public class CalibrationDialog extends Stage {
 
             // Обработка ошибок и получение энергий линий
             if (standard1Line == null || standard2Line == null) {
-                System.err.println("Не найдены Kα1 и Kβ1 линии для двух элементов.");
+                showErrorDialog("Ошибка калибровки", "Не найдены Kα1 и Kβ1 линии для двух элементов.");
                 return;
             }
             double energyStandard1 = elementLinesEnergies.get(standard1Line.getElementName()).get("Ka1");
@@ -285,7 +297,7 @@ public class CalibrationDialog extends Stage {
                 int pixelStandard1 = (int) standard1Line.getXPosition();
                 int pixelSampleKBeta1 = (int) standard2Line.getXPosition();
 
-                // Вызов метода калибровки с учётом порядка отражения и межплоскостного расстояния
+                // Вызов метода калибровки
                 double[] calibratedEnergies = calibrateWithTwoPoints(energyStandard1, pixelStandard1,
                         energyStandard2, pixelSampleKBeta1, positions, orderStandard, orderSample, dSpacing);
 
@@ -300,7 +312,7 @@ public class CalibrationDialog extends Stage {
                 updateChartAndTable(intensitiesSeries, calibratedSeries);
                 System.out.println("Серия данных 'Intensities' откалибрована методом двух стандартов.");
             } else {
-                System.err.println("Серия данных 'Intensities' не найдена!");
+                showErrorDialog("Ошибка калибровки", "Серия данных 'Intensities' не найдена!");
             }
         }
     }
@@ -309,7 +321,6 @@ public class CalibrationDialog extends Stage {
     private static double[] calibrateWithTwoPoints(double energyStandard, int pixelStandard,
                                                    double energySampleKBeta1, int pixelSampleKBeta1,
                                                    double[] spectrum, int orderStandard, int orderSample, double dSpacing) {
-
         // Вычисление длин волн по энергиям (hc/E)
         double wavelengthStandard = 1239.84193 / energyStandard;
         double wavelengthSample = 1239.84193 / energySampleKBeta1;
@@ -320,9 +331,6 @@ public class CalibrationDialog extends Stage {
 
         // Вычисление угловой дисперсии
         double angularDispersion = Math.abs(thetaSample - thetaStandard) / Math.abs(pixelSampleKBeta1 - pixelStandard);
-
-        // Вычисление энергетической дисперсии
-        double energyDispersion = 1 / angularDispersion;
 
         // Калибровка спектра
         double[] calibratedSpectrum = new double[spectrum.length];
@@ -352,6 +360,10 @@ public class CalibrationDialog extends Stage {
     private void performLinearRegressionCalibration() {
         Map<String, Map<String, Double>> elementLinesEnergies = readElementLinesEnergiesFromFile("src/main/java/com/example/funproject/xray_lines_3d_metals.txt");
         List<LineInfo> lines = linesFromPhotoRadioButton.isSelected() ? lineImageInfos : lineChartInfos;
+        if (lines == null) {
+            showErrorDialog("Ошибка калибровки", "Список линий не инициализирован.");
+            return;
+        }
 
         // Подготовка данных для линейной регрессии
         List<Double> knownPositions = new ArrayList<>();
@@ -363,7 +375,7 @@ public class CalibrationDialog extends Stage {
                 knownPositions.add(lineInfo.getXPosition());
                 knownEnergies.add(elementLinesEnergies.get(elementName).get(peakType));
             } else {
-                System.err.println("Энергия линии не найдена для: " + elementName + " - " + peakType);
+                showErrorDialog("Ошибка калибровки", "Энергия линии не найдена для: " + elementName + " - " + peakType);
                 return;
             }
         }
@@ -470,5 +482,14 @@ public class CalibrationDialog extends Stage {
         xAxis.setUpperBound(calibratedEnergies[calibratedEnergies.length - 1]);
         SpectralDataTable.updateTableViewInTab(selectedTab, newSeries.getData(), tableView);
         removeSeriesByName(currentChart, "Vertical Line");
+    }
+
+    // Выводит сообщения об ошибке
+    private void showErrorDialog(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

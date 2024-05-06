@@ -161,27 +161,6 @@ public class HelloController {
     }
 
     /**
-     * Обрабатывает анализ пиков в спектре.
-     * Обнаруживает и визуализирует пики в спектре на основе заданных параметров.
-     */
-    public void peakAnalysis(ActionEvent actionEvent) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-
-        XYChart.Series<Number, Number> series = spectralDataSeries.get(tabManager.innerTableAndChartTabPanes.get(tabPane
-                        .getSelectionModel()
-                        .getSelectedItem())
-                .getSelectionModel()
-                .getSelectedItem());
-
-        TabPane currentInnerTabPane = tabManager.innerTableAndChartTabPanes.get(tabPane.getSelectionModel().getSelectedItem());
-
-        // Передаем innerTabPane в visualizePeaks
-        detectedPeaks.put(currentTab, spectraAnalysis.visualizePeaks(currentTab, currentInnerTabPane, series, threshold, windowSize, minPeakDistance));
-
-
-    }
-
-    /**
      * Выполняет калибровку спектрометра.
      * Отображает контекстное меню для выбора метода калибровки (в данном случае, линейная регрессия).
      */

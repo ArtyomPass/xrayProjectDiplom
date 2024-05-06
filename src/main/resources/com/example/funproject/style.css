@@ -10,9 +10,10 @@
     -fx-background-color: #555; /* Sleek button color */
     -fx-text-fill: white;
     -fx-font-size: 12px; /* Smaller font for a compact look */
-    -fx-padding: 8px 10px; /* Smaller padding */
+    -fx-padding: 10px 12px; /* Smaller padding */
     -fx-max-width: Infinity;
     -fx-background-radius: 3px;
+
 }
 
 .menu-button:hover {

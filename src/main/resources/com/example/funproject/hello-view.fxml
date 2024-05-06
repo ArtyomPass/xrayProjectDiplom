@@ -1,45 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.ImageView?>
-
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
+
 <BorderPane fx:id="mainContainer" xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.funproject.HelloController" stylesheets="@style.css">
+
     <!-- Sidebar Menu on the left side -->
     <left>
-        <VBox fx:id="sidebar" spacing="10" styleClass="sidebar">
-            <!-- Core Functionalities -->
-            <Button text="New Tab" styleClass="menu-button" maxWidth="Infinity" onAction="#handleNewTab"/>
-            <Button text="Import X-ray Image" styleClass="menu-button" maxWidth="Infinity"
-                    onAction="#handleImportXRayImage"/>
-            <Button text="Smooth Image" styleClass="menu-button" maxWidth="Infinity"
-                    onAction="#handleImageSmoothing"/>
-            <Button text="Spectra Visualization" styleClass="menu-button" maxWidth="Infinity"
-                    onAction="#spectraVisualization"/>
-            <Button text="Peak Analysis" styleClass="menu-button" maxWidth="Infinity" onAction="#peakAnalysis"/>
-            <Button text="Quantitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button text="Qualitative Analysis" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button text="Export/Save Data" styleClass="menu-button" maxWidth="Infinity"/>
+        <VBox fx:id="sidebar" spacing="10" styleClass="sidebar" prefWidth="190">
+            <!-- Основные функции -->
+            <Button text="Новая вкладка" styleClass="menu-button" maxWidth="Infinity" onAction="#handleNewTab"/>
+            <Button text="Импорт изображения" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImportXRayImage"/>
 
-            <!-- Additional Functionalities -->
-            <Separator/>
-            <Button fx:id="spectrumCalibration" text="Instrument Calibration" styleClass="menu-button" maxWidth="Infinity" onAction="#spectrumCalibration"/>
-            <Button text="User Preferences" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button text="Help/Documentation" styleClass="menu-button" maxWidth="Infinity"/>
+            <Separator /> <!-- Разделитель после основных функций -->
+
+            <!-- Обработка изображений -->
+            <Button text="Сгладить изображения" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImageSmoothing"/>
+            <Button text="Визуализация спектров" styleClass="menu-button" maxWidth="Infinity" onAction="#spectraVisualization"/>
+
+            <Separator /> <!-- Разделитель после обработки изображений -->
+
+            <!-- Сохранение и экспорт -->
+            <Button text="Сохранить" styleClass="menu-button" maxWidth="Infinity"/>
+
+            <Separator /> <!-- Разделитель после сохранения -->
+
+            <!-- Дополнительные функции -->
+            <Button fx:id="spectrumCalibration" text="Калибровка" styleClass="menu-button" maxWidth="Infinity" onAction="#spectrumCalibration"/>
+            <Button text="Настройки пользователя" styleClass="menu-button" maxWidth="Infinity"/>
+            <Button text="Помощь/Документация" styleClass="menu-button" maxWidth="Infinity"/>
         </VBox>
     </left>
 
     <!-- Main Content Area -->
     <center>
         <TabPane fx:id="tabPane" style="-fx-border-color: red; -fx-border-width: 5px;">
-
-
             <!-- Additional tabs can be added here -->
         </TabPane>
     </center>
-
 
     <!-- Status Bar at the bottom -->
     <bottom>
