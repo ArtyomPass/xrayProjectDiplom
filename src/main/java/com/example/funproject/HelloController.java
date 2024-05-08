@@ -12,6 +12,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
+import java.io.File;
 import java.util.*;
 
 public class HelloController {
@@ -25,95 +26,97 @@ public class HelloController {
     protected TabPane tabPane;
 
 
-    // Вспомогательные классы для работы с данными и изображениями
+    // Вспомогательные классы
     private final FileImporter fileImporter = new FileImporter();
     protected TabManager tabManager;
     private DataPreprocessing dataPreprocessing;
-    protected SpectraAnalysis spectraAnalysis;
+    protected SpectralDataVisualization spectralDataVisualization;
 
-    // Хранилища данных для различных типов информации
-    protected Map<Tab, List<Image>> xRayImages = new HashMap<>(); // Хранит все изображения для спектра
-    private Map<Tab, List<XYChart.Data<Number, Number>>> detectedPeaks = new HashMap<>(); // Хранит обнаруженные пики
+    // Хранилища данных
+    protected Map<Tab, List<Image>> xRayImages = new HashMap<>();
     private Map<Tab, ImageProcessor> imageProcessors = new HashMap<>();
-
-    // Линии для картинок и для графиков
     protected Map<Image, List<LineInfo>> imageLines;
     protected Map<Tab, List<LineInfo>> chartLines;
-
     protected Map<Tab, TableView<SpectralDataTable.SpectralData>> spectralDataTableViews = new HashMap<>();
-    protected Map<Tab, XYChart.Series<Number, Number>> spectralDataSeries = new HashMap<>(); // Хранит данные для графика и таблицы
 
-    // Параметры для анализа пиков
-    private int windowSize = 20;
-    private double minPeakDistance = 6.0;
-    private double threshold = 20.1;
-
-    // Параметры для сглаживания изображений
+    // Параметры для сглаживания
     private int kernelSize = 9;
 
     /**
      * Инициализация контроллера.
-     * Создает экземпляры вспомогательных классов и настраивает начальное состояние приложения.
      */
     @FXML
     public void initialize() {
         tabManager = new TabManager(tabPane, imageProcessors);
         dataPreprocessing = new DataPreprocessing();
-        spectraAnalysis = new SpectraAnalysis();
-        System.out.println("The program is started, ready to work");
-
-        // Создаем первую вкладку при запуске приложения
+        spectralDataVisualization = new SpectralDataVisualization();
         imageLines = new HashMap<>();
         chartLines = new HashMap<>();
         handleNewTab();
+        System.out.println("Программа запущена и готова к работе.");
     }
 
     /**
-     * Создает новую вкладку с заданным названием.
+     * Создание новой вкладки.
      */
     @FXML
     public void handleNewTab() {
-        tabManager.createNewTab("Tab " + (tabPane.getTabs().size() + 1), this);
+        tabManager.createNewTab("Вкладка " + (tabPane.getTabs().size() + 1), this);
     }
 
     /**
-     * Обрабатывает импорт рентгеновского изображения.
-     * Открывает диалог выбора файлов и добавляет выбранные изображения на текущую вкладку.
+     * Импорт рентгеновского изображения.
      */
     @FXML
     public void handleImportXRayImage() {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        List<Image> importedImages = fileImporter.importData(mainContainer.getScene().getWindow());
-        this.xRayImages.put(currentTab, importedImages);
-        imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(this.xRayImages, currentTab);
+        List<Image> importedImages = fileImporter.importImages(mainContainer.getScene().getWindow());
+        xRayImages.put(currentTab, importedImages);
+        imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(xRayImages, currentTab);
     }
 
     /**
-     * Обрабатывает сглаживание изображения.
-     * Применяет фильтр усреднения (Box Blur) к выбранному изображению.
+     * Импорт данных из таблицы.
+     *
+     * @param actionEvent событие, вызвавшее метод
+     */
+    @FXML
+    public void handleImportTable(ActionEvent actionEvent) {
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        TableView<SpectralDataTable.SpectralData> tableViewToUpdate = spectralDataTableViews.get(currentTab);
+        File selectedFile = fileImporter.importTable(mainContainer.getScene().getWindow());
+
+        // Импортируем данные из таблицы и обновляем график и таблицу
+        spectralDataVisualization.importTableData(tableViewToUpdate, selectedFile);
+    }
+
+    /**
+     * Сглаживание изображения.
+     *
+     * @param event событие, вызвавшее метод
      */
     public void handleImageSmoothing(ActionEvent event) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-
         Image selectedImage = imageProcessors.get(currentTab).selectedImage;
         if (selectedImage == null) {
-            System.out.println("No image selected for processing.");
+            System.out.println("Изображение не выбрано.");
             return;
         }
 
-        // Создание контекстного меню
+        // Контекстное меню с опциями обработки
         ContextMenu processingMenu = new ContextMenu();
         MenuItem smoothItem = new MenuItem("Сгладить");
         MenuItem densityItem = new MenuItem("Денситометрия");
         processingMenu.getItems().addAll(smoothItem, densityItem);
 
-        // Обработчики событий для пунктов меню
+        // Обработчик события сглаживания
         smoothItem.setOnAction(e -> {
             Image smoothedImage = dataPreprocessing.imageSmoothing(selectedImage, kernelSize);
             updateImageInTab(currentTab, selectedImage, smoothedImage);
             imageProcessors.get(currentTab).selectedImage = smoothedImage;
         });
 
+        // Обработчик события денситометрии
         densityItem.setOnAction(e -> {
             WritableImage densityImage = dataPreprocessing.applyDensity(selectedImage);
             updateImageInTab(currentTab, selectedImage, densityImage);
@@ -123,61 +126,87 @@ public class HelloController {
         processingMenu.show((Node) event.getSource(), Side.BOTTOM, 0, 0);
     }
 
+
+    //* Обновление изображения на вкладке.
+
     private void updateImageInTab(Tab currentTab, Image oldImage, Image newImage) {
         List<Image> currentImages = xRayImages.getOrDefault(currentTab, new ArrayList<>());
         int selectedIndex = currentImages.indexOf(oldImage);
         if (selectedIndex != -1) {
             currentImages.set(selectedIndex, newImage);
             imageProcessors.get(currentTab).imageView.setImage(newImage);
+            xRayImages.put(currentTab, currentImages);
+            imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(xRayImages, currentTab);
         } else {
-            System.out.println("Selected image not found in the list.");
-            return;
+            System.out.println("Выбранное изображение не найдено.");
         }
-        xRayImages.put(currentTab, currentImages);
-        imageProcessors.get(currentTab).putImagesAndButtonsOnTabPane(xRayImages, currentTab);
     }
 
-    /**
-     * Обрабатывает визуализацию спектра.
-     * Извлекает данные из выбранного изображения и строит график спектра.
-     */
+    @FXML
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if (currentTab == null) return; // Проверка на null
+
         Image selectedImage = imageProcessors.get(currentTab).selectedImage;
-        TabPane currentInnerTabPane = tabManager.innerTableAndChartTabPanes.get(tabPane.getSelectionModel().getSelectedItem()); // Получаем innerTabPane
-        XYChart.Series<Number, Number> series = spectraAnalysis.updateChartWithSplineData(currentTab, selectedImage, currentInnerTabPane);
-        if (series == null) {
-            System.out.println("Unable to generate spectral data for the selected Image");
-            return;
-        }
+        TabPane currentInnerTabPane = tabManager.innerTableAndChartTabPanes.get(currentTab);
 
-        spectralDataSeries.put(tabManager.innerTableAndChartTabPanes.get(tabPane
-                        .getSelectionModel()
-                        .getSelectedItem())
-                .getSelectionModel()
-                .getSelectedItem(), series);
+        // Создание контекстного меню
+        ContextMenu visualizationMenu = new ContextMenu();
 
-        SpectralDataTable.updateTableViewInTab(currentTab, new ArrayList<>(series.getData()), spectralDataTableViews.get(currentTab));
+        // Пункт меню для построения графика по изображению
+        MenuItem imageBasedItem = new MenuItem("Построить график по изображению");
+        imageBasedItem.setOnAction(e -> {
+            XYChart.Series<Number, Number> series = spectralDataVisualization.updateChartWithSplineData(currentTab, selectedImage, currentInnerTabPane);
+            if (series == null) {
+                System.out.println("Не удалось получить данные спектра.");
+                return;
+            }
+            // Обновляем таблицу спектральных данных
+            SpectralDataTable.updateTableViewInTab(currentTab, new ArrayList<>(series.getData()), spectralDataTableViews.get(currentTab));
+        });
+
+        // Пункт меню для построения графика по таблице
+        MenuItem tableBasedItem = new MenuItem("Построить график по таблице");
+        tableBasedItem.setOnAction(e -> {
+            // Получаем текущую внутреннюю вкладку и график
+            Tab currentInnerTab = tabManager.innerTableAndChartTabPanes.get(currentTab).getSelectionModel().getSelectedItem();
+            LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
+            // Получаем данные из таблицы
+            TableView<SpectralDataTable.SpectralData> tableView = spectralDataTableViews.get(currentTab);
+
+            // Вызываем новый метод для визуализации
+            spectralDataVisualization.visualizeFromTable(currentTab, currentChart, tableView);
+        });
+
+        // Добавляем пункты меню в контекстное меню
+        visualizationMenu.getItems().addAll(imageBasedItem, tableBasedItem);
+
+        // Отображение контекстного меню
+        visualizationMenu.show((Node) actionEvent.getSource(), Side.BOTTOM, 0, 0);
     }
 
     /**
-     * Выполняет калибровку спектрометра.
-     * Отображает контекстное меню для выбора метода калибровки (в данном случае, линейная регрессия).
+     * Калибровка спектрометра.
+     *
+     * @param actionEvent событие, вызвавшее метод
      */
     public void spectrumCalibration(ActionEvent actionEvent) {
-        // Получить выбранную вкладку
+        // Выбранная вкладка
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        // Получить текущую внутреннюю вкладку и график
+
+        // Текущая внутренняя вкладка и график
         Tab currentInnerTab = tabManager.innerTableAndChartTabPanes.get(selectedTab).getSelectionModel().getSelectedItem();
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
-        // Получить текущий TableView для обновления
-        TableView<SpectralDataTable.SpectralData> tableViewToUpdate = spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
 
-        // Получить линии с текущей открытой вкладки
+        // TableView для обновления
+        TableView<SpectralDataTable.SpectralData> tableViewToUpdate = spectralDataTableViews.get(selectedTab);
+
+        // Линии с вкладок
         List<LineInfo> lineChartInfos = chartLines.get(currentInnerTab);
-        // Получить линии с выбранного изображения
         List<LineInfo> lineImageInfos = imageLines.get(imageProcessors.get(selectedTab).selectedImage);
 
-        CalibrationDialog dialog = new CalibrationDialog(selectedTab,lineImageInfos, lineChartInfos, currentChart, tableViewToUpdate);
+        // Открытие диалогового окна калибровки
+        new CalibrationDialog(selectedTab, lineImageInfos, lineChartInfos, currentChart, tableViewToUpdate);
     }
 }

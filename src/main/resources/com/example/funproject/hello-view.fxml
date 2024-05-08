@@ -12,27 +12,29 @@
     <!-- Sidebar Menu on the left side -->
     <left>
         <VBox fx:id="sidebar" spacing="10" styleClass="sidebar" prefWidth="190">
+
             <!-- Основные функции -->
             <Button text="Новая вкладка" styleClass="menu-button" maxWidth="Infinity" onAction="#handleNewTab"/>
-            <Button text="Импорт изображения" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImportXRayImage"/>
-
             <Separator /> <!-- Разделитель после основных функций -->
+            <!-- Импорт данных -->
+            <Button text="Импорт изображения" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImportXRayImage"/>
+            <Button text="Импорт таблицы" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImportTable"/>
+            <Separator /> <!-- Разделитель после импорта данных -->
 
             <!-- Обработка изображений -->
             <Button text="Сгладить изображения" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImageSmoothing"/>
             <Button text="Визуализация спектров" styleClass="menu-button" maxWidth="Infinity" onAction="#spectraVisualization"/>
-
+            <Button fx:id="spectrumCalibration" text="Калибровка" styleClass="menu-button" maxWidth="Infinity" onAction="#spectrumCalibration"/>
             <Separator /> <!-- Разделитель после обработки изображений -->
 
             <!-- Сохранение и экспорт -->
             <Button text="Сохранить" styleClass="menu-button" maxWidth="Infinity"/>
-
             <Separator /> <!-- Разделитель после сохранения -->
 
             <!-- Дополнительные функции -->
-            <Button fx:id="spectrumCalibration" text="Калибровка" styleClass="menu-button" maxWidth="Infinity" onAction="#spectrumCalibration"/>
             <Button text="Настройки пользователя" styleClass="menu-button" maxWidth="Infinity"/>
             <Button text="Помощь/Документация" styleClass="menu-button" maxWidth="Infinity"/>
+
         </VBox>
     </left>
 

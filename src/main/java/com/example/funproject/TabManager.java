@@ -1,5 +1,6 @@
 package com.example.funproject;
 
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.chart.LineChart;
@@ -297,6 +298,22 @@ public class TabManager {
         innerTabPaneCurrent.getTabs().add(newInnerTab);
         innerTabPaneCurrent.getSelectionModel().select(newInnerTab);
 
+        // Получить TableView для текущей вкладки
+        TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
+        // Очистить данные в TableView
+        tableViewToUpdate.getItems().clear();
+
+        // Добавить слушатель для обновления TableView при выборе серии данных
+        lineChart.getData().addListener((ListChangeListener<XYChart.Series<Number, Number>>) change -> {
+            while (change.next()) {
+                if (change.wasAdded()) {
+                    for (XYChart.Series<Number, Number> series : change.getAddedSubList()) {
+                        series.getNode().setOnMouseClicked(event -> updateTableViewFromSeries(series, tableViewToUpdate));
+                    }
+                }
+            }
+        });
+
         // Добавление слушателя для обновления TableView при выборе вкладки с графиком
         newInnerTab.setOnSelectionChanged(event -> {
             if (newInnerTab.isSelected()) {
@@ -304,6 +321,14 @@ public class TabManager {
             }
         });
     }
+
+
+    // Новый метод для обновления таблицы на основе выбранной серии данных
+    private void updateTableViewFromSeries(XYChart.Series<Number, Number> series, TableView<SpectralDataTable.SpectralData> tableViewToUpdate) {
+        // Обновить TableView с данными из выбранной серии
+        SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
+    }
+
 
     /**
      * Обновляет TableView с использованием данных из графика на активной вкладке.
@@ -317,16 +342,17 @@ public class TabManager {
         // Проверка, что вкладка содержит LineChart
         if (currentInnerTab.getContent() instanceof LineChart) {
             LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+            // Получение TableView, соответствующей активной вкладке во внешнем TabPane
+            TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
 
             // Проверка, что график содержит данные
             if (!currentChart.getData().isEmpty()) {
                 XYChart.Series<Number, Number> series = currentChart.getData().get(0);
-
-                // Получение TableView, соответствующей активной вкладке во внешнем TabPane
-                TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
-
                 // Обновление TableView
                 SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
+            } else {
+                // Очистить данные в TableView
+                tableViewToUpdate.getItems().clear();
             }
         }
     }

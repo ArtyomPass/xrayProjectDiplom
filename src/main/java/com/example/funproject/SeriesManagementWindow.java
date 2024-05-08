@@ -6,84 +6,169 @@ import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class SeriesManagementWindow extends Stage {
+    // Ссылка на LineChart, которым управляет окно
+    private final LineChart<Number, Number> lineChart;
 
-    private LineChart<Number, Number> lineChart; // Ссылка на график LineChart
+    // Список серий, отображаемый в ListView
+    private final ListView<GridPane> seriesList = new ListView<>();
 
+    // Соответствие между сериями и их ColorPicker'ами
+    private final Map<XYChart.Series<Number, Number>, ColorPicker> colorPickersMap = new HashMap<>();
+
+    // Сохранение предыдущей выделенной серии (для сброса стиля)
+    private XYChart.Series<Number, Number> previousSelectedSeries = null;
+
+    /***
+     * Конструктор окна управления сериями
+     *
+     * @param lineChart LineChart, которым управляет окно
+     */
     public SeriesManagementWindow(LineChart<Number, Number> lineChart) {
         this.lineChart = lineChart;
-        initializeUI(); // Инициализируем пользовательский интерфейс
+        initializeUI(); // Инициализация пользовательского интерфейса
+
+        // Добавление обработчика события закрытия окна
+        this.setOnCloseRequest(event -> {
+            // Сброс стиля всех серий при закрытии окна
+            for (XYChart.Series<Number, Number> series : lineChart.getData()) {
+                setSeriesStyle(series, true);
+            }
+        });
     }
 
+    /***
+     * Инициализация пользовательского интерфейса
+     */
     private void initializeUI() {
-        VBox layout = new VBox(10); // Основной контейнер (вертикальный)
-        ListView<HBox> seriesList = new ListView<>(); // Список для отображения серий
+        VBox layout = new VBox(10); // Вертикальный контейнер для элементов
+        updateSeriesList(); // Заполнение списка серий
 
-        // Срабатывает после отрисовки окна, чтобы получить доступ к узлам
-        this.setOnShown(event -> {
-            for (XYChart.Series<Number, Number> series : lineChart.getData()) {
-                // 1. Перебираем все серии в графике
-                Label nameLabel = new Label(series.getName()); // Метка с именем серии
-                ColorPicker colorPicker = new ColorPicker(); // Выбор цвета для серии
+        // Обработчик выбора серии в ListView
+        seriesList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                // Получение серии из выбранного элемента списка
+                XYChart.Series<Number, Number> selectedSeries = lineChart.getData().get(seriesList.getSelectionModel().getSelectedIndex());
 
-                // Получаем узел линии серии для начального цвета
-                Shape seriesLine = (Shape) series.getNode().lookup(".chart-series-line");
-                if (seriesLine != null) {
-                    colorPicker.setValue((Color) seriesLine.getStroke());
+                // Сброс стиля предыдущей выделенной серии
+                if (previousSelectedSeries != null) {
+                    setSeriesStyle(previousSelectedSeries, false);
                 }
 
-                // 2. Обработчик изменения цвета
-                colorPicker.setOnAction(e -> {
-                    Color newColor = colorPicker.getValue(); // Новый выбранный цвет
-                    updateSeriesColor(series, newColor); // Обновляем цвет серии
-                });
+                // Установка жирного стиля для выбранной серии
+                setSeriesStyle(selectedSeries, true);
 
-                HBox seriesInfo = new HBox(10, nameLabel, colorPicker); // Контейнер для имени и выбора цвета
-                seriesList.getItems().add(seriesInfo); // Добавляем информацию о серии в список
+                // Сохранение текущей выделенной серии
+                previousSelectedSeries = selectedSeries;
             }
         });
 
-        // Кнопки управления (добавление, редактирование, удаление)
-        Button addButton = new Button("Add");
-        Button editButton = new Button("Edit");
-        Button removeButton = new Button("Remove");
-        HBox buttonBar = new HBox(10, addButton, editButton, removeButton);
-
-        layout.getChildren().addAll(seriesList, buttonBar); // Добавляем элементы в основной контейнер
-        Scene scene = new Scene(layout, 400, 300); // Создаем сцену
-        this.setTitle("Manage Data Series"); // Заголовок окна
-        this.setScene(scene); // Устанавливаем сцену для окна
+        layout.getChildren().addAll(seriesList); // Добавление списка в контейнер
+        Scene scene = new Scene(layout, 240, 300); // Создание сцены
+        //this.setTitle("Удаление серий"); // Заголовок окна
+        this.setScene(scene); // Установка сцены для окна
     }
 
-    // 3. Метод для обновления цвета серии
+    /***
+     * Обновление списка серий в ListView
+     */
+    private void updateSeriesList() {
+        seriesList.getItems().clear(); // Очистка списка перед обновлением
+
+        // Перебор всех серий в LineChart
+        for (XYChart.Series<Number, Number> series : lineChart.getData()) {
+            Label nameLabel = new Label(series.getName()); // Метка с именем серии
+
+            // Получение или создание ColorPicker для серии
+            ColorPicker colorPicker = colorPickersMap.computeIfAbsent(series, s -> {
+                ColorPicker picker = new ColorPicker(getSeriesColor(s));
+
+                // Обработчик изменения цвета серии
+                picker.setOnAction(e -> updateSeriesColor(s, picker.getValue()));
+                return picker;
+            });
+
+            Button removeButton = new Button("X"); // Кнопка для удаления серии
+            removeButton.setOnAction(e -> {
+                lineChart.getData().remove(series); // Удаление серии из LineChart
+                colorPickersMap.remove(series); // Удаление из словаря
+                updateSeriesList(); // Обновление списка серий
+            });
+
+            // Организация элементов в GridPane
+            GridPane seriesInfo = new GridPane();
+            seriesInfo.setHgap(10);
+            seriesInfo.getColumnConstraints().addAll(
+                    new ColumnConstraints(100, 100, Double.MAX_VALUE, Priority.ALWAYS, null, true),
+                    new ColumnConstraints(50));
+            seriesInfo.addRow(0, nameLabel, colorPicker, removeButton);
+
+            seriesList.getItems().add(seriesInfo); // Добавление информации о серии в список
+        }
+    }
+
+    /***
+     * Получение текущего цвета серии
+     *
+     * @param series Серия данных
+     * @return Цвет серии или черный, если цвет не определен
+     */
+    private Color getSeriesColor(XYChart.Series<Number, Number> series) {
+        // Извлекаем узел, представляющий линию серии
+        Node seriesLine = series.getNode().lookup(".chart-series-line");
+
+        // Проверяем, является ли узел фигурой (Shape)
+        if (seriesLine instanceof Shape) {
+            // Если да, то возвращаем цвет обводки фигуры
+            return (Color) ((Shape) seriesLine).getStroke();
+        } else {
+            // Если нет, возвращаем черный цвет по умолчанию
+            return Color.BLACK;
+        }
+    }
+
+
+    /*** Обновление цвета серии и соответствующих элементов**
+     * @param series Серия данных
+     * @param newColor Новый цвет
+     */
     private void updateSeriesColor(XYChart.Series<Number, Number> series, Color newColor) {
-        // Обновляем цвет линии серии
-        Shape seriesLine = (Shape) series.getNode().lookup(".chart-series-line");
-        if (seriesLine != null) {
-            seriesLine.setStroke(newColor);
-        }
+        // Обновление цвета линии серии через стиль
+        series.getNode().setStyle("-fx-stroke: " + toRgbString(newColor) + ";");
 
-        // Обновляем цвет маркеров данных
-        ObservableList<XYChart.Data<Number, Number>> dataPoints = series.getData();
-        for (XYChart.Data<Number, Number> data : dataPoints) {
-            Node dataNode = data.getNode();
-            if (dataNode != null) {
-                // 4. Изменяем стиль маркера данных, используя CSS
-                dataNode.lookup(".chart-line-symbol").setStyle("-fx-background-color: " + newColor.toString().replace("0x", "#") + ";");
-            }
-        }
+    }
 
-        // 5. Обновляем цвет маркера в легенде (предполагается использование стандартной легенды)
-        Node legendItem = lineChart.lookup(".chart-legend-item-symbol");
-        if (legendItem != null) {
-            legendItem.setStyle("-fx-background-color: " + newColor.toString().replace("0x", "#") + ";");
+
+    // Вспомогательный метод для преобразования цвета в строку RGB
+    private String toRgbString(Color color) {
+        return String.format("rgb(%d, %d, %d)",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255));
+    }
+
+    /***
+     * Установка стиля серии (жирный или обычный)
+     *
+     * @param series Серия данных
+     * @param bold   true для жирного стиля, false для обычного
+     */
+    private void setSeriesStyle(XYChart.Series<Number, Number> series, boolean bold) {
+        Node seriesLine = series.getNode().lookup(".chart-series-line");
+        if (seriesLine instanceof Shape) {
+            // Инвертируем значения: bold = false -> толстая линия
+            ((Shape) seriesLine).setStrokeWidth(bold ? 3 : 1);
         }
     }
 }
