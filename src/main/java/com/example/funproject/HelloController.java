@@ -11,8 +11,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class HelloController {
@@ -142,6 +145,14 @@ public class HelloController {
         }
     }
 
+
+    /**
+     * Отображает контекстное меню для выбора способа визуализации спектра.
+     * Позволяет построить график по изображению или по таблице.
+     *
+     * @param actionEvent Событие, вызвавшее метод.
+     */
+
     @FXML
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
@@ -186,11 +197,13 @@ public class HelloController {
         visualizationMenu.show((Node) actionEvent.getSource(), Side.BOTTOM, 0, 0);
     }
 
+
     /**
      * Калибровка спектрометра.
      *
      * @param actionEvent событие, вызвавшее метод
      */
+
     public void spectrumCalibration(ActionEvent actionEvent) {
         // Выбранная вкладка
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
@@ -208,5 +221,50 @@ public class HelloController {
 
         // Открытие диалогового окна калибровки
         new CalibrationDialog(selectedTab, lineImageInfos, lineChartInfos, currentChart, tableViewToUpdate);
+    }
+
+
+    /**
+     * Экспортирует данные из таблицы текущей вкладки в текстовый файл.
+     * Данные сохраняются в формате "длина волны пробел интенсивность".
+     *
+     * @param actionEvent Событие, вызвавшее метод.
+     */
+
+    public void exportTables(ActionEvent actionEvent) {
+        // Получить текущую вкладку
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+
+        // Получить TableView для текущей вкладки
+        TableView<SpectralDataTable.SpectralData> tableView = spectralDataTableViews.get(currentTab);
+
+        // Создать диалог сохранения файла
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить данные спектра");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Текстовые файлы (*.txt)", "*.txt"));
+        File file = fileChooser.showSaveDialog(mainContainer.getScene().getWindow());
+
+        // Проверить, был ли выбран файл
+        if (file != null) {
+            try {
+                // Создать FileWriter для записи в файл
+                FileWriter writer = new FileWriter(file);
+
+                // Пройти по всем строкам таблицы
+                for (SpectralDataTable.SpectralData data : tableView.getItems()) {
+                    // Получить данные из каждой строки
+                    double wavelength = data.getXValue().doubleValue();
+                    double intensity = data.getYValue().doubleValue();
+
+                    // Записать данные в файл
+                    writer.write(wavelength + " " + intensity + "\n");
+                }
+
+                // Закрыть FileWriter
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

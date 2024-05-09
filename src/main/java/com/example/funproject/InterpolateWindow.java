@@ -11,16 +11,12 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class InterpolateWindow extends Stage {
 
     public InterpolateWindow(HelloController controller, LineChart<Number, Number> chart) {
-        // Создаем новое окн
+        // Создаем новое окно
         Stage interpolateStage = new Stage();
         interpolateStage.setTitle("Интерполяция");
         interpolateStage.initModality(Modality.APPLICATION_MODAL);
@@ -65,57 +61,46 @@ public class InterpolateWindow extends Stage {
                     alert.setHeaderText("Неверный шаг энергии");
                     alert.setContentText("Шаг энергии не может быть равен нулю.");
                     alert.showAndWait();
-                    return; // Прерываем обработку
+                    return;
                 }
 
-                if(chart.getData().isEmpty()){
+                if (chart.getData().isEmpty()) {
                     // Вывод сообщения об ошибке
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Ошибка");
                     alert.setHeaderText("График пустой");
                     alert.setContentText("График должен иметь какие-нибудь значения)");
                     alert.showAndWait();
-                    return; // Прерываем обработку
+                    return;
                 }
 
                 // Получить список всех серий
                 ObservableList<XYChart.Series<Number, Number>> allSeries = chart.getData();
                 XYChart.Series<Number, Number> lastSeries = allSeries.get(allSeries.size() - 1);
 
-                // 1. Определение нового диапазона X
-                double minX = lastSeries.getData().get(0).getXValue().doubleValue();
-                double maxX = lastSeries.getData().get(lastSeries.getData().size() - 1).getXValue().doubleValue();
-                int numPoints = (int) Math.ceil((maxX - minX) / energyStep) + 1;
-
-                List<Double> newXValues = IntStream.range(0, numPoints)
-                        .mapToDouble(i -> minX + i * energyStep)
-                        .boxed()
-                        .collect(Collectors.toList());
-
                 // Создать новую серию для интерполированных данных
                 XYChart.Series<Number, Number> interpolatedSeries = new XYChart.Series<>();
-                for (int i = 0; i < newXValues.size(); i++) {
-                    double x = newXValues.get(i);
 
+                // Получить первое и последнее значения X из последней серии
+                double firstX = lastSeries.getData().get(0).getXValue().doubleValue();
+                double lastX = lastSeries.getData().get(lastSeries.getData().size() - 1).getXValue().doubleValue();
+
+                // Цикл интерполяции
+                for (double x = firstX; x <= lastX; x += energyStep) {
                     // Найти три ближайшие точки из последней серии
-                    int index1 = findClosestIndex(lastSeries.getData(), x);
-                    int index2 = index1 + 1;
-                    int index3 = index2 + 1;
+                    double x1 = findClosestX(lastSeries.getData(), x);
+                    double x2 = findClosestX(lastSeries.getData(), x + energyStep);
+                    double x3 = findClosestX(lastSeries.getData(), x + 2 * energyStep);
 
                     // Проверка границ
-                    if (index3 >= lastSeries.getData().size()) {
+                    if (x3 > lastX) {
                         break; // Недостаточно точек для интерполяции
                     }
 
-                    // Получить значения X и Y для трёх точек
-                    double x1 = lastSeries.getData().get(index1).getXValue().doubleValue();
-                    double y1 = lastSeries.getData().get(index1).getYValue().doubleValue();
-                    double x2 = lastSeries.getData().get(index2).getXValue().doubleValue();
-                    double y2 = lastSeries.getData().get(index2).getYValue().doubleValue();
-                    double x3 = lastSeries.getData().get(index3).getXValue().doubleValue();
-                    double y3 = lastSeries.getData().get(index3).getYValue().doubleValue();
-
-                    System.out.println(x1 + " " + y1 + " " + x2 + " " + y2 + " " + x3 + " " + y3);
+                    // Получить значения Y для трёх точек
+                    double y1 = findYValue(lastSeries.getData(), x1);
+                    double y2 = findYValue(lastSeries.getData(), x2);
+                    double y3 = findYValue(lastSeries.getData(), x3);
 
                     // Интерполяция по трём точкам (например, кубический сплайн)
                     double y = interpolate(x, x1, y1, x2, y2, x3, y3);
@@ -123,29 +108,42 @@ public class InterpolateWindow extends Stage {
                     // Добавить интерполированную точку в новую серию
                     interpolatedSeries.getData().add(new XYChart.Data<>(x, y));
                 }
+
                 chart.getData().clear();
                 chart.getData().add(interpolatedSeries);
-
             } catch (NumberFormatException e) {
                 // Обработка ошибки ввода
-                // ...
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Ошибка");
+                alert.setHeaderText("Неверный формат ввода");
+                alert.setContentText("Пожалуйста, введите числовое значение для шага энергии.");
+                alert.showAndWait();
             }
         });
     }
 
-    private static int findClosestIndex(ObservableList<XYChart.Data<Number, Number>> data, double targetX) {
-        int closestIndex = -1;
+    private static double findClosestX(ObservableList<XYChart.Data<Number, Number>> data, double targetX) {
         double closestDistance = Double.MAX_VALUE;
-        for (int i = 0; i < data.size(); i++) {
-            double currentX = data.get(i).getXValue().doubleValue();
+        double closestX = 0;
+        for (XYChart.Data<Number, Number> point : data) {
+            double currentX = point.getXValue().doubleValue();
             double distance = Math.abs(currentX - targetX);
-
             if (distance < closestDistance) {
                 closestDistance = distance;
-                closestIndex = i;
+                closestX = currentX;
             }
         }
-        return closestIndex;
+        return closestX;
+    }
+
+    // Найти значение Y для заданного значения X
+    private static double findYValue(ObservableList<XYChart.Data<Number, Number>> data, double targetX) {
+        for (XYChart.Data<Number, Number> point : data) {
+            if (point.getXValue().doubleValue() == targetX) {
+                return point.getYValue().doubleValue();
+            }
+        }
+        return 0; // Значение не найдено, вернуть 0
     }
 
     private static double interpolate(double x, double x1, double y1, double x2, double y2, double x3, double y3) {
@@ -158,6 +156,5 @@ public class InterpolateWindow extends Stage {
         double L2 = ((x - x1) * (x - x3)) / ((x2 - x1) * (x2 - x3));
         double L3 = ((x - x1) * (x - x2)) / ((x3 - x1) * (x3 - x2));
         return L1 * y1 + L2 * y2 + L3 * y3;
-
     }
 }

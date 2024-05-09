@@ -215,19 +215,25 @@ public class BackgroundSubtractionWindow extends Stage {
         double x1 = Double.parseDouble(x1TextField.getText());
         double x2 = Double.parseDouble(x2TextField.getText());
 
-        // Получение значений Y1 и Y2
-        double y1 = (double) data.get((int) x1).getYValue();
-        double y2 = (double) data.get((int) x2).getYValue();
+        // Найти ближайшие точки к X1 и X2
+        XYChart.Data<Number, Number> point1 = findClosestPoint(data, x1);
+        XYChart.Data<Number, Number> point2 = findClosestPoint(data, x2);
+
+        // Получить значения y1 и y2 из ближайших точек
+        double y1 = point1.getYValue().doubleValue();
+        double y2 = point2.getYValue().doubleValue();
 
         // Вычисление коэффициентов линейной функции (y = mx + b)
-        double m = (y2 - y1) / (x2 - x1);
-        double b = y1 - m * x1;
+        double m = (y2 - y1) / (point2.getXValue().doubleValue() - point1.getXValue().doubleValue());
+        double b = y1 - m * point1.getXValue().doubleValue();
 
         // Создать новую серию для вычтенных данных и линию фона
         LineChart.Series<Number, Number> subtractedSeries = new XYChart.Series<>();
-        subtractedSeries.setName("Вычтенные данные");
+        subtractedSeries.setName("Intensities");
         LineChart.Series<Number, Number> backgroundLineSeries = new XYChart.Series<>();
-        backgroundLineSeries.setName("Линия фона");
+        backgroundLineSeries.setName("Baseline");
+
+
 
         // Вычитание фона и добавление точек в новую серию
         for (XYChart.Data<Number, Number> point : data) {
@@ -242,8 +248,21 @@ public class BackgroundSubtractionWindow extends Stage {
         // Добавить серии на график и скрыть легенду
         chart.getData().clear();
         chart.getData().add(backgroundLineSeries);
+        backgroundLineSeries.getNode().lookup(".chart-series-line").setStyle("-fx-stroke-width: 1; -fx-stroke-dash-array: 2 2;");
         chart.getData().add(subtractedSeries);
         chart.setLegendVisible(false);
+    }
+    private XYChart.Data<Number, Number> findClosestPoint(ObservableList<XYChart.Data<Number, Number>> data, double x) {
+        XYChart.Data<Number, Number> closestPoint = null;
+        double minDistance = Double.MAX_VALUE;
+        for (XYChart.Data<Number, Number> point : data) {
+            double distance = Math.abs(point.getXValue().doubleValue() - x);
+            if (distance < minDistance) {
+                closestPoint = point;
+                minDistance = distance;
+            }
+        }
+        return closestPoint;
     }
 
     // Вычитание экспоненциального фона

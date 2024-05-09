@@ -191,8 +191,7 @@ public class CalibrationDialog extends Stage {
                 throw new NumberFormatException();
             }
         } catch (NumberFormatException e) {
-            showErrorDialog("Ошибка ввода",
-                    "Некорректные значения порядка отражения или межплоскостного расстояния.");
+            showErrorDialog("Ошибка ввода", "Некорректные значения порядка отражения или межплоскостного расстояния.");
             return;
         }
 
@@ -299,7 +298,8 @@ public class CalibrationDialog extends Stage {
 
                 // Вызов метода калибровки
                 double[] calibratedEnergies = calibrateWithTwoPoints(energyStandard1, pixelStandard1,
-                        energyStandard2, pixelSampleKBeta1, positions, orderStandard, orderSample, dSpacing);
+                        energyStandard2, pixelSampleKBeta1,
+                        positions, orderStandard, orderSample, dSpacing);
 
                 // Создание новой серии с откалиброванными энергиями
                 XYChart.Series<Number, Number> calibratedSeries = new XYChart.Series<>();

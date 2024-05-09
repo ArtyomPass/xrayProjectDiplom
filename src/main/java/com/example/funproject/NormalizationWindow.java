@@ -80,7 +80,7 @@ public class NormalizationWindow extends Stage {
                     Number yValue = data.getYValue().doubleValue() * normalizationFactor;
                     normalizedSeries.getData().add(new XYChart.Data<>(xValue, yValue));
                 }
-                normalizedSeries.setName("Нормированный график");
+                normalizedSeries.setName("Intensities");
                 // Добавить новую серию на график (и опционально удалить старую)
                 chart.getData().clear();
                 chart.getData().add(normalizedSeries);

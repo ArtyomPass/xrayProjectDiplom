@@ -28,7 +28,7 @@
             <Separator /> <!-- Разделитель после обработки изображений -->
 
             <!-- Сохранение и экспорт -->
-            <Button text="Сохранить" styleClass="menu-button" maxWidth="Infinity"/>
+            <Button text="Сохранить" styleClass="menu-button" maxWidth="Infinity"  onAction="#exportTables"/>
             <Separator /> <!-- Разделитель после сохранения -->
 
             <!-- Дополнительные функции -->

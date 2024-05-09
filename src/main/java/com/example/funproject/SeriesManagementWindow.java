@@ -41,9 +41,26 @@ public class SeriesManagementWindow extends Stage {
 
         // Добавление обработчика события закрытия окна
         this.setOnCloseRequest(event -> {
-            // Сброс стиля всех серий при закрытии окна
             for (XYChart.Series<Number, Number> series : lineChart.getData()) {
-                setSeriesStyle(series, true);
+                Node seriesLine = series.getNode().lookup(".chart-series-line");
+                if (seriesLine instanceof Shape) {
+                    // Получаем текущий стиль линии
+                    String currentStyle = seriesLine.getStyle();
+                    // Проверяем, есть ли уже стиль пунктирной линии
+                    boolean isDashed = currentStyle.contains("-fx-stroke-dash-array");
+                    // Определяем толщину линии
+                    double currentStrokeWidth = ((Shape) seriesLine).getStrokeWidth();
+
+                    if (isDashed) {
+                        // Пунктирная линия: устанавливаем только толщину, сохраняя стиль
+                        seriesLine.setStyle(String.format("-fx-stroke-width: %.1f; %s",
+                                (currentStrokeWidth < 2) ? 3.0 : currentStrokeWidth, currentStyle));
+                        System.out.println("currentStrokeWidth: " + currentStrokeWidth);
+                    } else if (currentStrokeWidth < 2) {
+                        // Тонкая сплошная линия: делаем её жирной сплошной
+                        ((Shape) seriesLine).setStrokeWidth(3);
+                    } // else - жирная линия остаётся без изменений
+                }
             }
         });
     }
@@ -167,8 +184,25 @@ public class SeriesManagementWindow extends Stage {
     private void setSeriesStyle(XYChart.Series<Number, Number> series, boolean bold) {
         Node seriesLine = series.getNode().lookup(".chart-series-line");
         if (seriesLine instanceof Shape) {
-            // Инвертируем значения: bold = false -> толстая линия
-            ((Shape) seriesLine).setStrokeWidth(bold ? 3 : 1);
+            // Получаем текущий стиль линии
+            String currentStyle = seriesLine.getStyle();
+
+            // Проверяем, есть ли уже стиль пунктирной линии
+            boolean isDashed = currentStyle.contains("-fx-stroke-dash-array");
+
+            if (bold) {
+                // Если нужно сделать линию жирной, увеличиваем толщину
+                ((Shape) seriesLine).setStrokeWidth(3);
+
+            } else {
+                // Если нужно сделать линию обычной, уменьшаем толщину
+                ((Shape) seriesLine).setStrokeWidth(1);
+
+                // Если линия была пунктирной, сохраняем этот стиль
+                if (isDashed) {
+                    seriesLine.setStyle("-fx-stroke-width: 1; " + currentStyle);
+                }
+            }
         }
     }
 }
