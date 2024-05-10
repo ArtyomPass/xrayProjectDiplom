@@ -82,6 +82,7 @@ public class InterpolateWindow extends Stage {
                 double minX, maxX, step;
                 if (lastSeries.getData().get(0).getXValue().doubleValue() <
                         lastSeries.getData().get(lastSeries.getData().size() - 1).getXValue().doubleValue()) {
+
                     minX = lastSeries.getData().stream()
                             .mapToDouble(data -> data.getXValue().doubleValue())
                             .min()
@@ -105,8 +106,14 @@ public class InterpolateWindow extends Stage {
 
                 // 2. Генерация новых X-значений в диапазоне minX - maxX с учетом направления
                 List<Double> newXValues = new ArrayList<>();
-                for (double x = minX; x >= maxX; x += step) { // Изменено условие цикла и шаг
-                    newXValues.add(x);
+                if (minX < maxX) {
+                    for (double x = minX; x <= maxX; x += step) {
+                        newXValues.add(x);
+                    }
+                } else {
+                    for (double x = minX; x >= maxX; x -= step) { // Изменено условие и шаг
+                        newXValues.add(x);
+                    }
                 }
 
                 // Создать новую серию для интерполированных данных
@@ -140,6 +147,8 @@ public class InterpolateWindow extends Stage {
 
                 chart.getData().clear();
                 chart.getData().add(interpolatedSeries);
+                System.out.println(interpolatedSeries.getData());
+                interpolatedSeries.setName("Intensities");
             } catch (NumberFormatException e) {
                 // Обработка ошибки ввода
                 Alert alert = new Alert(Alert.AlertType.ERROR);

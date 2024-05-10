@@ -342,16 +342,30 @@ public class TabManager {
         // Проверка, что вкладка содержит LineChart
         if (currentInnerTab.getContent() instanceof LineChart) {
             LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
+
             // Получение TableView, соответствующей активной вкладке во внешнем TabPane
             TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
 
             // Проверка, что график содержит данные
             if (!currentChart.getData().isEmpty()) {
-                XYChart.Series<Number, Number> series = currentChart.getData().get(0);
-                // Обновление TableView
-                SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
+                // Поиск последней серии, которая не "Vertical Lines"
+                XYChart.Series<Number, Number> series = null;
+                for (int i = currentChart.getData().size() - 1; i >= 0; i--) {
+                    if (!currentChart.getData().get(i).getName().equals("Vertical Line")) {
+                        series = currentChart.getData().get(i);
+                        break; // Выходим из цикла, как только нашли подходящую серию
+                    }
+                }
+
+                // Обновление TableView, если подходящая серия найдена
+                if (series != null) {
+                    SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
+                } else {
+                    // Очистить данные в TableView, если подходящая серия не найдена
+                    tableViewToUpdate.getItems().clear();
+                }
             } else {
-                // Очистить данные в TableView
+                // Очистить данные в TableView, если график пуст
                 tableViewToUpdate.getItems().clear();
             }
         }
