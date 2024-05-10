@@ -79,7 +79,7 @@ public class InterpolateWindow extends Stage {
                 XYChart.Series<Number, Number> lastSeries = allSeries.get(allSeries.size() - 1);
 
                 // 1. Определение диапазона X и направления
-                double minX, maxX, step;
+                double minX, maxX;
                 if (lastSeries.getData().get(0).getXValue().doubleValue() <
                         lastSeries.getData().get(lastSeries.getData().size() - 1).getXValue().doubleValue()) {
 
@@ -91,7 +91,6 @@ public class InterpolateWindow extends Stage {
                             .mapToDouble(data -> data.getXValue().doubleValue())
                             .max()
                             .orElse(0);
-                    step = energyStep;
                 } else {
                     minX = lastSeries.getData().stream()
                             .mapToDouble(data -> data.getXValue().doubleValue())
@@ -101,19 +100,16 @@ public class InterpolateWindow extends Stage {
                             .mapToDouble(data -> data.getXValue().doubleValue())
                             .min()
                             .orElse(0);
-                    step = -energyStep;
                 }
 
                 // 2. Генерация новых X-значений в диапазоне minX - maxX с учетом направления
                 List<Double> newXValues = new ArrayList<>();
-                if (minX < maxX) {
-                    for (double x = minX; x <= maxX; x += step) {
-                        newXValues.add(x);
-                    }
-                } else {
-                    for (double x = minX; x >= maxX; x -= step) { // Изменено условие и шаг
-                        newXValues.add(x);
-                    }
+                // Определение направления
+                boolean ascending = lastSeries.getData().get(1).getXValue().doubleValue() > lastSeries.getData().get(0).getXValue().doubleValue();
+
+                // Генерация новых X-значений с учетом направления
+                for (double x = minX; (ascending ? x <= maxX : x >= maxX); x += (ascending ? energyStep : -energyStep)) {
+                    newXValues.add(x);
                 }
 
                 // Создать новую серию для интерполированных данных

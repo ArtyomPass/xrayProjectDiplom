@@ -273,7 +273,9 @@ public class TabManager {
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
         // Создать и показать окно управления сериями
-        SeriesManagementWindow seriesManagementWindow = new SeriesManagementWindow(currentChart);
+        SeriesManagementWindow seriesManagementWindow = new SeriesManagementWindow(currentChart,
+                spectralDataTableView,
+                newTab);
         seriesManagementWindow.show();
     }
 

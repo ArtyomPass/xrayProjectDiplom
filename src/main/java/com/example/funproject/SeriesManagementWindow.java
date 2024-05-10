@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
+import com.example.funproject.SpectralDataTable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,17 +27,25 @@ public class SeriesManagementWindow extends Stage {
 
     // Соответствие между сериями и их ColorPicker'ами
     private final Map<XYChart.Series<Number, Number>, ColorPicker> colorPickersMap = new HashMap<>();
+    private final Tab currentTab;
 
     // Сохранение предыдущей выделенной серии (для сброса стиля)
     private XYChart.Series<Number, Number> previousSelectedSeries = null;
+
+    // Ссылка на TableView для обновления
+    private final TableView<SpectralDataTable.SpectralData> tableViewToUpdate;
 
     /***
      * Конструктор окна управления сериями
      *
      * @param lineChart LineChart, которым управляет окно
      */
-    public SeriesManagementWindow(LineChart<Number, Number> lineChart) {
+    public SeriesManagementWindow(LineChart<Number, Number> lineChart,
+                                  TableView<SpectralDataTable.SpectralData> tableViewToUpdate,
+                                  Tab currentTab) {
         this.lineChart = lineChart;
+        this.tableViewToUpdate = tableViewToUpdate; // Сохраняем ссылку на TableView
+        this.currentTab = currentTab;
         initializeUI(); // Инициализация пользовательского интерфейса
 
         // Добавление обработчика события закрытия окна
@@ -88,6 +97,9 @@ public class SeriesManagementWindow extends Stage {
 
                 // Сохранение текущей выделенной серии
                 previousSelectedSeries = selectedSeries;
+
+                // Обновление TableView с данными из выбранной серии
+                SpectralDataTable.updateTableViewInTab(currentTab, selectedSeries.getData(), tableViewToUpdate);
             }
         });
 
