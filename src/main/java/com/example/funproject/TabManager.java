@@ -7,7 +7,6 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.TilePane;
@@ -17,18 +16,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Класс TabManager управляет вкладками в приложении, включая создание вкладок,
+ * отображение данных спектра, создание графиков и обработку событий кнопок управления.
+ */
 public class TabManager {
 
     // Глобальная переменная для хранения TabPane, с которым работает класс
     private final TabPane tabPane;
+
+    // Карта, связывающая вкладки с экземплярами ImageProcessor для обработки изображений
     private final Map<Tab, ImageProcessor> imageProcessors;
+
+    // Экземпляр ImageProcessor для текущей вкладки
     private ImageProcessor imageProcessor;
 
     // Глобальная переменная для хранения внутреннего TabPane для графиков
     private TabPane innerTabPane;
+
+    // Карта, связывающая вкладки с внутренними TabPane для графиков и таблиц
     protected Map<Tab, TabPane> innerTableAndChartTabPanes;
 
-    // Глобальная переменная для хранения TableView с данными спектра
     // TableView для отображения данных спектра в каждой вкладке
     private TableView<SpectralDataTable.SpectralData> spectralDataTableView;
 
@@ -40,22 +48,27 @@ public class TabManager {
     private Button smoothButton;
     private Button correctionButton;
     private Button statisticsButton;
-    private Button seriesManagementButton; // Новая кнопка для управления сериями данных
+    private Button seriesManagementButton;
 
+    // ImageView для отображения основного изображения
     protected ImageView mainImageView;
+
+    // TilePane для отображения миниатюр изображений
     protected TilePane thumbnailsTilePane;
+
+    // Ссылка на новую созданную вкладку
     private Tab newTab;
 
     /**
      * Конструктор TabManager.
      *
-     * @param tabPane - TabPane, с которым будет работать класс
+     * @param tabPane       - TabPane, с которым будет работать класс
+     * @param imageProcessors - карта, связывающая вкладки с экземплярами ImageProcessor
      */
     public TabManager(TabPane tabPane, Map<Tab, ImageProcessor> imageProcessors) {
         this.tabPane = tabPane;
         this.innerTableAndChartTabPanes = new HashMap<>();
         this.imageProcessors = imageProcessors;
-
     }
 
     /**
@@ -86,8 +99,8 @@ public class TabManager {
         // Обработка нажатия кнопки "Добавить график"
         handleAddButtonClick(controller);
 
+        // Сохранение ImageProcessor для новой вкладки
         imageProcessors.put(newTab, imageProcessor);
-
     }
 
     /**
@@ -97,43 +110,15 @@ public class TabManager {
      * @return SplitPane - содержимое вкладки
      */
     private SplitPane createTabContent(HelloController controller) {
-
         // Создание кнопок управления
-        addChartButton = new Button("Добавить график");
-        addChartButton.setOnAction(event -> handleAddButtonClick(controller));
-        normalizeButton = new Button("Нормировать");
-        normalizeButton.setOnAction(event -> handleNormalizeButtonClick(controller));
-        interpolateButton = new Button("Интерполяция");
-        interpolateButton.setOnAction(event -> handleInterpolateButtonClick(controller));
-        backgroundButton = new Button("Фон");
-        backgroundButton.setOnAction(event -> handleSubtractBackgroundButtonClick(controller));
-        smoothButton = new Button("Сглаживание");
-        smoothButton.setOnAction(event -> handleSmoothButtonClick(controller));
-        correctionButton = new Button("Коррекция");
-        correctionButton.setOnAction(event -> handleCorrectionButtonClick(controller));
-        statisticsButton = new Button("Статистика");
-        statisticsButton.setOnAction(event -> handleStatisticsButtonClick(controller));
-        seriesManagementButton = new Button("Управление сериями");
-        seriesManagementButton.setOnAction(event -> handleSeriesManagementButtonClick(controller));
-
-        // Настройка внешнего вида кнопок
-        addChartButton.setPrefWidth(150);
-        normalizeButton.setPrefWidth(150);
-        interpolateButton.setPrefWidth(150);
-        backgroundButton.setPrefWidth(150);
-        smoothButton.setPrefWidth(150);
-        correctionButton.setPrefWidth(150);
-        statisticsButton.setPrefWidth(150);
-
-        // Настройка стилей кнопок
-        addChartButton.getStyleClass().add("control-button");
-        normalizeButton.getStyleClass().add("control-button");
-        interpolateButton.getStyleClass().add("control-button");
-        backgroundButton.getStyleClass().add("control-button");
-        smoothButton.getStyleClass().add("control-button");
-        correctionButton.getStyleClass().add("control-button");
-        statisticsButton.getStyleClass().add("control-button");
-        seriesManagementButton.getStyleClass().add("control-button");
+        addChartButton = createButton("Добавить график", event -> handleAddButtonClick(controller));
+        normalizeButton = createButton("Нормировать", event -> handleNormalizeButtonClick(controller));
+        interpolateButton = createButton("Интерполяция", event -> handleInterpolateButtonClick(controller));
+        backgroundButton = createButton("Фон", event -> handleSubtractBackgroundButtonClick(controller));
+        smoothButton = createButton("Сглаживание", event -> handleSmoothButtonClick(controller));
+        correctionButton = createButton("Коррекция", event -> handleCorrectionButtonClick(controller));
+        statisticsButton = createButton("Статистика", event -> handleStatisticsButtonClick(controller));
+        seriesManagementButton = createButton("Управление сериями", event -> handleSeriesManagementButtonClick(controller));
 
         // Размещение кнопок в VBox
         VBox buttonsVBox = new VBox(addChartButton, normalizeButton, interpolateButton,
@@ -149,13 +134,13 @@ public class TabManager {
         SplitPane tableAndChartsSplitPane = new SplitPane();
         tableAndChartsSplitPane.setOrientation(Orientation.HORIZONTAL);
         tableAndChartsSplitPane.getItems().addAll(spectralDataTableView, innerTabPane);
-        tableAndChartsSplitPane.setDividerPositions(0.2); // Установка начального положения разделителя
+        tableAndChartsSplitPane.setDividerPositions(0.2);
 
         // Создание SplitPane для объединения tableAndChartsSplitPane и кнопок управления
         SplitPane tabsAndButtonsSplitPane = new SplitPane();
         tabsAndButtonsSplitPane.setOrientation(Orientation.HORIZONTAL);
         tabsAndButtonsSplitPane.getItems().addAll(tableAndChartsSplitPane, buttonsVBox);
-        tabsAndButtonsSplitPane.setDividerPositions(0.9); // Установка начального положения разделителя
+        tabsAndButtonsSplitPane.setDividerPositions(0.9);
 
         // Инициализация ImageView для основного изображения
         mainImageView = new ImageView();
@@ -180,38 +165,47 @@ public class TabManager {
         SplitPane imageAndThumbnailsSplitPane = new SplitPane();
         imageAndThumbnailsSplitPane.setOrientation(Orientation.HORIZONTAL);
         imageAndThumbnailsSplitPane.getItems().addAll(mainImageScrollPane, thumbnailsScrollPane);
-        imageAndThumbnailsSplitPane.setDividerPositions(0.8); // Установка начального положения разделителя
+        imageAndThumbnailsSplitPane.setDividerPositions(0.8);
 
-        // экземпляр ImageControlPanel где выбираются линии на картинке итд (Грубо говоря HBox)
+        // Создаем экземпляр ImageProcessor для обработки изображений
         imageProcessor = new ImageProcessor(controller, mainImageView, thumbnailsTilePane);
+
+        // Создаем панель управления изображениями
         ImageControlPanel imageControlPanel = new ImageControlPanel(
                 controller,
                 imageProcessor,
                 mainImageView,
                 innerTabPane);
 
-        // Создайте VBox для размещения изображения и панели управления где выбираются линии элементов итд
+        // Создайте VBox для размещения изображения и панели управления
         BorderPane mainImageAndControlsPane = new BorderPane();
         mainImageAndControlsPane.setCenter(imageAndThumbnailsSplitPane);
-        mainImageAndControlsPane.setBottom(imageControlPanel); // Панель управления внизу
+        mainImageAndControlsPane.setBottom(imageControlPanel);
 
         // Создание главного вертикального SplitPane для объединения всего содержимого вкладки
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(Orientation.VERTICAL);
         mainSplitPane.getItems().addAll(tabsAndButtonsSplitPane, mainImageAndControlsPane);
-        mainSplitPane.setDividerPositions(0.6); // Установка начального положения разделителя
+        mainSplitPane.setDividerPositions(0.6);
 
         // Возврат главного SplitPane как содержимого вкладки
         return mainSplitPane;
     }
 
-    // Обработчики событий для кнопок управления
+    // Метод для создания кнопки с заданным текстом и обработчиком событий
+    private Button createButton(String text, javafx.event.EventHandler<javafx.event.ActionEvent> handler) {
+        Button button = new Button(text);
+        button.setOnAction(handler);
+        button.setPrefWidth(150);
+        button.getStyleClass().add("control-button");
+        return button;
+    }
 
+    // Обработчики событий для кнопок управления
     private void handleNormalizeButtonClick(HelloController controller) {
         // Получить активную вкладку и график
         Tab currentInnerTab = innerTableAndChartTabPanes.get(controller.tabPane.getSelectionModel()
                 .getSelectedItem()).getSelectionModel().getSelectedItem();
-
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
         // Получить TableView
@@ -272,9 +266,13 @@ public class TabManager {
         Tab currentInnerTab = innerTableAndChartTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem()).getSelectionModel().getSelectedItem();
         LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
+        // Получить TableView
+        TableView<SpectralDataTable.SpectralData> tableViewToUpdate =
+                controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
+
         // Создать и показать окно управления сериями
         SeriesManagementWindow seriesManagementWindow = new SeriesManagementWindow(currentChart,
-                spectralDataTableView,
+                tableViewToUpdate,
                 newTab);
         seriesManagementWindow.show();
     }
@@ -302,6 +300,7 @@ public class TabManager {
 
         // Получить TableView для текущей вкладки
         TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
+
         // Очистить данные в TableView
         tableViewToUpdate.getItems().clear();
 
@@ -324,13 +323,11 @@ public class TabManager {
         });
     }
 
-
-    // Новый метод для обновления таблицы на основе выбранной серии данных
+    // Метод для обновления таблицы на основе выбранной серии данных
     private void updateTableViewFromSeries(XYChart.Series<Number, Number> series, TableView<SpectralDataTable.SpectralData> tableViewToUpdate) {
         // Обновить TableView с данными из выбранной серии
         SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
     }
-
 
     /**
      * Обновляет TableView с использованием данных из графика на активной вкладке.
