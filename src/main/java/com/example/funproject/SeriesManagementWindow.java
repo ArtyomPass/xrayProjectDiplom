@@ -18,6 +18,9 @@ import javafx.stage.Stage;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Класс окна управления сериями графиков.
+ */
 public class SeriesManagementWindow extends Stage {
     private final LineChart<Number, Number> lineChart;
     private final ListView<GridPane> seriesList = new ListView<>();
@@ -26,6 +29,12 @@ public class SeriesManagementWindow extends Stage {
     private final TableView<SpectralDataTable.SpectralData> tableViewToUpdate;
     private XYChart.Series<Number, Number> previousSelectedSeries = null;
 
+    /**
+     * Конструктор класса.
+     * @param lineChart график для управления
+     * @param tableViewToUpdate таблица для обновления данных
+     * @param currentTab текущая вкладка
+     */
     public SeriesManagementWindow(LineChart<Number, Number> lineChart,
                                   TableView<SpectralDataTable.SpectralData> tableViewToUpdate,
                                   Tab currentTab) {
@@ -33,43 +42,46 @@ public class SeriesManagementWindow extends Stage {
         this.tableViewToUpdate = tableViewToUpdate;
         this.currentTab = currentTab;
         initializeUI();
-
         this.setOnCloseRequest(event -> thickenLinesOnClose());
     }
 
+    /**
+     * Инициализация пользовательского интерфейса.
+     */
     private void initializeUI() {
         VBox layout = new VBox(10);
         updateSeriesList();
-
         seriesList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
                 handleSeriesSelection(newValue));
-
         layout.getChildren().addAll(seriesList); // Добавление списка серий в layout
         Scene scene = new Scene(layout, 240, 300);
         this.setScene(scene);
     }
 
+    /**
+     * Обновление списка серий в пользовательском интерфейсе.
+     */
     private void updateSeriesList() {
         seriesList.getItems().clear();
         ToggleGroup radioGroup = new ToggleGroup();
 
-        ObservableList<GridPane> seriesInfoList = FXCollections.observableArrayList();
-
         lineChart.getData().forEach(series -> {
             GridPane seriesInfo = createSeriesInfo(series, radioGroup);
-            seriesInfoList.add(seriesInfo);
+            seriesList.getItems().add(seriesInfo);
         });
 
-        // Обновление списка элементов в ListView
-        seriesList.getItems().addAll(seriesInfoList);
-
-        // Установка светло-зелёного фона для последнего элемента, если он существует
-        if (!seriesInfoList.isEmpty()) {
-            GridPane lastSeriesInfo = seriesInfoList.get(seriesInfoList.size() - 1);
-            lastSeriesInfo.setStyle("-fx-background-color: lightgreen;");
+        if (!seriesList.getItems().isEmpty()) {
+            GridPane lastSeriesInfo = seriesList.getItems().get(seriesList.getItems().size() - 1);
+            lastSeriesInfo.setStyle("-fx-background-color: lightgreen;"); // Последний элемент зелёный
         }
     }
 
+    /**
+     * Создание интерфейса для каждой серии в списке.
+     * @param series серия данных
+     * @param radioGroup группа радио кнопок
+     * @return GridPane с информацией о серии
+     */
     private GridPane createSeriesInfo(XYChart.Series<Number, Number> series, ToggleGroup radioGroup) {
         Label nameLabel = new Label(series.getName());
         ColorPicker colorPicker = colorPickersMap.computeIfAbsent(series, s -> createColorPicker(s));
@@ -86,12 +98,22 @@ public class SeriesManagementWindow extends Stage {
         return seriesInfo;
     }
 
+    /**
+     * Создание выборщика цвета для серии.
+     * @param series серия данных
+     * @return ColorPicker для выбора цвета
+     */
     private ColorPicker createColorPicker(XYChart.Series<Number, Number> series) {
         ColorPicker picker = new ColorPicker(getSeriesColor(series));
         picker.setOnAction(e -> updateSeriesColor(series, picker.getValue()));
         return picker;
     }
 
+    /**
+     * Создание кнопки для удаления серии.
+     * @param series серия данных
+     * @return кнопка для удаления
+     */
     private Button createRemoveButton(XYChart.Series<Number, Number> series) {
         Button button = new Button("X");
         button.setOnAction(e -> {
@@ -102,6 +124,12 @@ public class SeriesManagementWindow extends Stage {
         return button;
     }
 
+    /**
+     * Создание радиокнопки для перемещения серии в конец списка.
+     * @param series серия данных
+     * @param group группа радио кнопок
+     * @return радиокнопка
+     */
     private RadioButton createRadioButton(XYChart.Series<Number, Number> series, ToggleGroup group) {
         RadioButton radioButton = new RadioButton();
         radioButton.setToggleGroup(group);
@@ -111,6 +139,10 @@ public class SeriesManagementWindow extends Stage {
         return radioButton;
     }
 
+    /**
+     * Обработка выбора серии в списке.
+     * @param newValue новое значение выбранной строки
+     */
     private void handleSeriesSelection(GridPane newValue) {
         if (newValue != null) {
             int selectedIndex = seriesList.getSelectionModel().getSelectedIndex();
@@ -124,6 +156,10 @@ public class SeriesManagementWindow extends Stage {
         }
     }
 
+    /**
+     * Перемещение выбранной серии в конец списка данных.
+     * @param series серия для перемещения
+     */
     private void moveToEnd(XYChart.Series<Number, Number> series) {
         Map<XYChart.Series<Number, Number>, Color> seriesColors = cacheSeriesColors();
 
@@ -136,30 +172,58 @@ public class SeriesManagementWindow extends Stage {
         updateSeriesList();
     }
 
+    /**
+     * Кэширование цветов серий перед изменением порядка.
+     * @return карта серий и их цветов
+     */
     private Map<XYChart.Series<Number, Number>, Color> cacheSeriesColors() {
         Map<XYChart.Series<Number, Number>, Color> colors = new HashMap<>();
         lineChart.getData().forEach(s -> colors.put(s, getSeriesColor(s)));
         return colors;
     }
 
+    /**
+     * Применение кэшированных цветов к сериям.
+     * @param colors карта цветов серий
+     */
     private void applyCachedColors(Map<XYChart.Series<Number, Number>, Color> colors) {
         colors.forEach(this::updateSeriesColor);
     }
 
+    /**
+     * Получение текущего цвета серии.
+     * @param series серия данных
+     * @return цвет серии
+     */
     private Color getSeriesColor(XYChart.Series<Number, Number> series) {
         Node seriesLine = series.getNode().lookup(".chart-series-line");
         return seriesLine instanceof Shape ? (Color) ((Shape) seriesLine).getStroke() : Color.BLACK;
     }
 
+    /**
+     * Обновление цвета серии.
+     * @param series серия данных
+     * @param newColor новый цвет
+     */
     private void updateSeriesColor(XYChart.Series<Number, Number> series, Color newColor) {
         Node seriesNode = series.getNode();
         if (seriesNode != null) seriesNode.setStyle("-fx-stroke: " + toRgbString(newColor) + ";");
     }
 
+    /**
+     * Преобразование цвета в строковый формат RGB.
+     * @param color объект Color
+     * @return строка RGB
+     */
     private String toRgbString(Color color) {
         return String.format("rgb(%d, %d, %d)", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
     }
 
+    /**
+     * Установка стиля серии (жирный или обычный).
+     * @param series серия данных
+     * @param bold true для жирного стиля, false для обычного
+     */
     private void setSeriesStyle(XYChart.Series<Number, Number> series, boolean bold) {
         Node seriesLine = series.getNode().lookup(".chart-series-line");
         if (seriesLine instanceof Shape) {
@@ -167,7 +231,9 @@ public class SeriesManagementWindow extends Stage {
         }
     }
 
-
+    /**
+     * Утолщение линий при закрытии окна в зависимости от типа серии.
+     */
     private void thickenLinesOnClose() {
         lineChart.getData().forEach(series -> {
             Node seriesLine = series.getNode().lookup(".chart-series-line");
@@ -176,16 +242,13 @@ public class SeriesManagementWindow extends Stage {
                 String currentStyle = line.getStyle();
                 boolean isDashed = currentStyle != null && currentStyle.contains("-fx-stroke-dash-array");
 
-                // Устанавливаем стиль в зависимости от названия серии
                 if ("Baseline".equals(series.getName())) {
-                    // Для серии "Baseline" сохраняем пунктирность и делаем линию тонкой
                     if (isDashed) {
                         line.setStyle("-fx-stroke-width: 1; " + currentStyle);
                     } else {
                         line.setStyle("-fx-stroke-width: 1; -fx-stroke: " + toRgbString((Color)line.getStroke()) + ";");
                     }
                 } else {
-                    // Для всех других серий делаем линии жирными
                     if (isDashed) {
                         line.setStyle("-fx-stroke-width: 3; " + currentStyle);
                     } else {
