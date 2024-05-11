@@ -195,6 +195,4 @@ public class SeriesManagementWindow extends Stage {
             }
         });
     }
-
-
 }
