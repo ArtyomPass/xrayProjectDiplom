@@ -124,12 +124,6 @@ public class ImageControlPanel extends HBox {
             // Сброс курсора
             lineChart.setCursor(Cursor.DEFAULT);
             lineChart.setOnMouseClicked(null);
-
-            // Включение автоматического масштабирования для осей
-            NumberAxis xAxis = (NumberAxis) lineChart.getXAxis();
-            xAxis.setAutoRanging(true);
-            NumberAxis yAxis = (NumberAxis) lineChart.getYAxis();
-            yAxis.setAutoRanging(true);
         }
 
         if (imageView != null) {

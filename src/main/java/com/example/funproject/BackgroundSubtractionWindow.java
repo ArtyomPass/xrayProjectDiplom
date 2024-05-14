@@ -265,7 +265,7 @@ public class BackgroundSubtractionWindow extends Stage {
         return closestPoint;
     }
 
-    // Вычитание экспоненциального фона
+    // Метод для вычитания экспоненциального фона
     private void subtractExponentialBackground(LineChart<Number, Number> chart) {
         // Получение значений из текстовых полей
         double beforeFrom = Double.parseDouble(beforeFromTextField.getText());
@@ -277,8 +277,6 @@ public class BackgroundSubtractionWindow extends Stage {
         XYChart.Series<Number, Number> lastSeries = chart.getData().get(chart.getData().size() - 1);
         ObservableList<XYChart.Data<Number, Number>> data = lastSeries.getData();
 
-        // ... (Реализация МНК - опущенная часть кода)
-
         // Разделение данных на две части: до и после линии
         List<XYChart.Data<Number, Number>> beforeData = data.stream()
                 .filter(point -> point.getXValue().doubleValue() >= beforeFrom && point.getXValue().doubleValue() <= beforeTo)
@@ -287,22 +285,56 @@ public class BackgroundSubtractionWindow extends Stage {
                 .filter(point -> point.getXValue().doubleValue() >= afterFrom && point.getXValue().doubleValue() <= afterTo)
                 .collect(Collectors.toList());
 
-        // Создать новую серию для вычтенных данных
-        LineChart.Series<Number, Number> subtractedSeries = new XYChart.Series<>();
+        // Нахождение параметров экспоненциальной функции
+        double[] beforeParams = fitExponential(beforeData);
+        double[] afterParams = fitExponential(afterData);
+
+        // Создание новой серии для вычтенных данных
+        XYChart.Series<Number, Number> subtractedSeries = new XYChart.Series<>();
         subtractedSeries.setName("Вычтенные данные");
 
         // Вычитание фона и добавление точек в новую серию
         for (XYChart.Data<Number, Number> point : data) {
             double x = point.getXValue().doubleValue();
             double yValue = point.getYValue().doubleValue();
-            //double backgroundValue = c + b * Math.pow(x, n) / (a + Math.pow(Math.E, n * x)); // Вычисляем фон для x
-            //double subtractedY = yValue - backgroundValue;
-            //subtractedSeries.getData().add(new XYChart.Data<>(x, subtractedY));
+
+            // Определение, какую экспоненциальную функцию использовать
+            double backgroundValue;
+            if (x < (beforeTo + afterFrom) / 2) {
+                backgroundValue = beforeParams[0] * Math.exp(beforeParams[1] * x);
+            } else {
+                backgroundValue = afterParams[0] * Math.exp(afterParams[1] * x);
+            }
+
+            double subtractedY = yValue - backgroundValue;
+            subtractedSeries.getData().add(new XYChart.Data<>(x, subtractedY));
         }
 
         // Добавить новую серию на график
         chart.getData().clear();
         chart.getData().add(subtractedSeries);
+    }
+
+    // Метод для нахождения параметров экспоненциальной функции
+    private double[] fitExponential(List<XYChart.Data<Number, Number>> data) {
+        int n = data.size();
+        double sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+
+        for (XYChart.Data<Number, Number> point : data) {
+            double x = point.getXValue().doubleValue();
+            double y = Math.log(point.getYValue().doubleValue());
+
+            sumX += x;
+            sumY += y;
+            sumXY += x * y;
+            sumXX += x * x;
+        }
+
+        double b = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        double a = (sumY - b * sumX) / n;
+        a = Math.exp(a);
+
+        return new double[]{a, b};
     }
 
     // Показать элементы управления для линейного фона
