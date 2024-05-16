@@ -289,7 +289,7 @@ public class TabManager {
 
     private void handleSubtractBackgroundButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
-        BackgroundSubtractionWindow backgroundWindow = new BackgroundSubtractionWindow(controller, currentChart);
+        BackgroundSubtractionWindow backgroundWindow = new BackgroundSubtractionWindow(currentChart);;
         backgroundWindow.show();
     }
 

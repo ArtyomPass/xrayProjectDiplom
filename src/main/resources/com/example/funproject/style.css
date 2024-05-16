@@ -13,7 +13,6 @@
     -fx-padding: 10px 12px; /* Smaller padding */
     -fx-max-width: Infinity;
     -fx-background-radius: 3px;
-
 }
 
 .menu-button:hover {
@@ -24,11 +23,6 @@
     -fx-background-color: #2C373F; /* Even darker for pressed state */
     -fx-effect: innershadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 0, 0);
 }
-
-
-
-
-
 
 /* General TabPane Styles */
 .tab-pane {
@@ -80,7 +74,6 @@
     -fx-background-color: #D8D8D8;
 }
 
-
 /* Styles for button Удалить изображение */
 .button-delete {
     -fx-background-color: #ff5555;
@@ -117,7 +110,6 @@
     -fx-background-color: #d9d9d9;
 }
 
-
 /* Стиль для кнопки "Отметить Пики" */
 .button-pick-peaks {
     -fx-background-color: #FFA07A; /* Светло-коралловый фон */
@@ -132,7 +124,7 @@
     -fx-background-color: #E9967A; /* Чуть темнее светло-кораллового при наведении */
 }
 
-
+/* Styles for control buttons */
 .control-button {
     -fx-background-color: #f0f0f0; /* Light gray background */
     -fx-text-fill: #333333; /* Dark gray text */
@@ -147,6 +139,7 @@
     -fx-background-color: #e0e0e0; /* Slightly darker gray on hover */
 }
 
+/* Styles for primary buttons */
 .primary-button {
     -fx-background-color: #007bff; /* Blue background */
     -fx-text-fill: white; /* White text */
@@ -155,4 +148,32 @@
 
 .primary-button:hover {
     -fx-background-color: #0062cc; /* Even darker blue on hover */
+}
+
+/* Custom button styles */
+.custom-button {
+    -fx-background-color: #4CAF50; /* Green background */
+    -fx-text-fill: white; /* White text */
+    -fx-font-weight: bold;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px 10px; /* Smaller padding for consistency */
+}
+
+.custom-button:hover {
+    -fx-background-color: #45A049; /* Darker green on hover */
+}
+
+/* Remove button styles */
+.remove-button {
+    -fx-background-color: #f44336; /* Red background */
+    -fx-text-fill: white; /* White text */
+    -fx-font-weight: bold;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px 10px; /* Smaller padding for consistency */
+}
+
+.remove-button:hover {
+    -fx-background-color: #e53935; /* Darker red on hover */
 }

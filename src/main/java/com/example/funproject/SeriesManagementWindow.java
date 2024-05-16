@@ -26,6 +26,7 @@ public class SeriesManagementWindow extends Stage {
     private final LineChart<Number, Number> lineChart;
     private final ListView<GridPane> seriesList = new ListView<>();
     private final Map<XYChart.Series<Number, Number>, ColorPicker> colorPickersMap = new HashMap<>();
+    private final Map<XYChart.Series<Number, Number>, Boolean> mirroredStateMap = new HashMap<>();
     private final Tab currentTab;
     private final TableView<SpectralDataTable.SpectralData> tableViewToUpdate;
 
@@ -55,7 +56,8 @@ public class SeriesManagementWindow extends Stage {
         seriesList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
                 handleSeriesSelection(newValue));
         layout.getChildren().addAll(seriesList); // Добавление списка серий в layout
-        Scene scene = new Scene(layout, 290, 300);
+        Scene scene = new Scene(layout, 350, 300);
+        scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
         this.setScene(scene);
         this.setAlwaysOnTop(true);
     }
@@ -90,14 +92,15 @@ public class SeriesManagementWindow extends Stage {
         ColorPicker colorPicker = colorPickersMap.computeIfAbsent(series, s -> createColorPicker(s));
         Button removeButton = createRemoveButton(series);
         RadioButton radioButton = createRadioButton(series, radioGroup);
-        Button autoRangeButton = createAutoRangeButton(series); // Создаем кнопку
+        Button autoRangeButton = createAutoRangeButton(series); // Создаем кнопку авто диапазона
+        Button mirrorButton = createMirrorButton(series); // Создаем кнопку для зеркалирования
 
         GridPane seriesInfo = new GridPane();
         seriesInfo.setHgap(10);
         seriesInfo.getColumnConstraints().addAll(
                 new ColumnConstraints(100, 100, Double.MAX_VALUE, Priority.ALWAYS, null, true),
                 new ColumnConstraints(50));
-        seriesInfo.addRow(0, nameLabel, colorPicker, autoRangeButton, radioButton, removeButton);
+        seriesInfo.addRow(0, nameLabel, colorPicker, autoRangeButton, mirrorButton, radioButton, removeButton);
 
         return seriesInfo;
     }
@@ -110,8 +113,97 @@ public class SeriesManagementWindow extends Stage {
      */
     private Button createAutoRangeButton(XYChart.Series<Number, Number> series) {
         Button button = new Button("Авто");
+        button.getStyleClass().add("custom-button");
         button.setOnAction(e -> toggleAutoRange(series));
         return button;
+    }
+
+    /**
+     * Создание кнопки для зеркалирования серии.
+     *
+     * @param series серия данных
+     * @return кнопка для зеркалирования
+     */
+    private Button createMirrorButton(XYChart.Series<Number, Number> series) {
+        Button button = new Button("Зеркало");
+        button.getStyleClass().add("custom-button");
+        button.setOnAction(e -> mirrorSeries(series));
+        return button;
+    }
+
+    /**
+     * Зеркалирование серии данных.
+     *
+     * @param series серия данных
+     */
+    /**
+     * Зеркалирование серии данных внутри своего диапазона.
+     *
+     * @param series серия данных
+     */
+    /**
+     * Зеркалирование серии данных внутри своего диапазона.
+     *
+     * @param series серия данных
+     */
+    private void mirrorSeries(XYChart.Series<Number, Number> series) {
+        ObservableList<XYChart.Data<Number, Number>> mirroredData = FXCollections.observableArrayList();
+
+        // Вычисление диапазона значений X
+        double minX = series.getData().stream().mapToDouble(data -> data.getXValue().doubleValue()).min().orElse(0);
+        double maxX = series.getData().stream().mapToDouble(data -> data.getXValue().doubleValue()).max().orElse(0);
+        double centerX = (minX + maxX) / 2;
+
+        // Зеркалирование данных относительно центральной точки диапазона X
+        for (XYChart.Data<Number, Number> data : series.getData()) {
+            double mirroredX = 2 * centerX - data.getXValue().doubleValue();
+            mirroredData.add(new XYChart.Data<>(mirroredX, data.getYValue()));
+        }
+
+        series.setData(mirroredData);
+        mirroredStateMap.put(series, !mirroredStateMap.getOrDefault(series, false));
+
+        // Обновление таблицы
+        SpectralDataTable.updateTableViewInTab(currentTab, series.getData(), tableViewToUpdate);
+
+        // Корректировка границ оси после зеркалирования
+        if (!lineChart.getXAxis().isAutoRanging()) {
+            adjustManualBounds();
+        } else {
+            adjustBounds(series);
+        }
+    }
+
+
+    /**
+     * Корректировка границ оси X в ручном режиме.
+     */
+    private void adjustManualBounds() {
+        double minX = lineChart.getData().stream()
+                .flatMap(series -> series.getData().stream())
+                .mapToDouble(data -> data.getXValue().doubleValue())
+                .min().orElse(0);
+        double maxX = lineChart.getData().stream()
+                .flatMap(series -> series.getData().stream())
+                .mapToDouble(data -> data.getXValue().doubleValue())
+                .max().orElse(0);
+
+        ((NumberAxis) lineChart.getXAxis()).setLowerBound(minX);
+        ((NumberAxis) lineChart.getXAxis()).setUpperBound(maxX);
+    }
+
+    /**
+     * Корректировка границ оси после зеркалирования.
+     *
+     * @param series серия данных
+     */
+    private void adjustBounds(XYChart.Series<Number, Number> series) {
+        if (series.getData().size() > 1) {
+            double firstX = series.getData().get(0).getXValue().doubleValue();
+            double lastX = series.getData().get(series.getData().size() - 1).getXValue().doubleValue();
+            ((NumberAxis) lineChart.getXAxis()).setLowerBound(firstX);
+            ((NumberAxis) lineChart.getXAxis()).setUpperBound(lastX);
+        }
     }
 
     /**
@@ -120,12 +212,10 @@ public class SeriesManagementWindow extends Stage {
      * @param series серия данных
      */
     private void toggleAutoRange(XYChart.Series<Number, Number> series) {
-        if (series.getNode() != null) {
-            if (lineChart.getXAxis().isAutoRanging()) {
-                switchToManualRange(series);
-            } else {
-                switchToAutoRange();
-            }
+        if (lineChart.getXAxis().isAutoRanging()) {
+            switchToManualRange(series);
+        } else {
+            switchToAutoRange();
         }
     }
 
@@ -138,14 +228,21 @@ public class SeriesManagementWindow extends Stage {
         if (series.getData().size() > 1) {
             double firstX = series.getData().get(0).getXValue().doubleValue();
             double lastX = series.getData().get(series.getData().size() - 1).getXValue().doubleValue();
+            if (mirroredStateMap.getOrDefault(series, false)) {
+                double temp = firstX;
+                firstX = lastX;
+                lastX = temp;
+            }
             lineChart.getXAxis().setAutoRanging(false);
             ((NumberAxis) lineChart.getXAxis()).setLowerBound(firstX);
             ((NumberAxis) lineChart.getXAxis()).setUpperBound(lastX);
             setSeriesStyle(series, true);
+            System.out.println("Режим: Установлены ручные границы (Set Bounds)");
         } else {
             System.out.println("Недостаточно данных для установки ручного диапазона");
         }
     }
+
 
     /**
      * Переключение в автоматический режим диапазона оси.
@@ -154,6 +251,7 @@ public class SeriesManagementWindow extends Stage {
         lineChart.getXAxis().setAutoRanging(true);
         lineChart.getYAxis().setAutoRanging(true);
         resetAllSeriesStyles();
+        System.out.println("Режим: Автоматическое определение границ (Auto Resize)");
     }
 
     /**
@@ -176,16 +274,19 @@ public class SeriesManagementWindow extends Stage {
      */
     private Button createRemoveButton(XYChart.Series<Number, Number> series) {
         Button button = new Button("X");
+
+        button.getStyleClass().add("remove-button");
         button.setOnAction(e -> {
             lineChart.getData().remove(series);
             colorPickersMap.remove(series);
+            mirroredStateMap.remove(series);
             updateSeriesList();
         });
         return button;
     }
 
     /**
-     * Создание радиокнопки для перемещения серии в конец списка.
+     * Создание радиокнопки для перемещения серии в конец списка
      *
      * @param series серия данных
      * @param group  группа радио кнопок

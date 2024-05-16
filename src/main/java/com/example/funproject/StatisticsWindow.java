@@ -79,7 +79,7 @@ public class StatisticsWindow extends Stage {
         ObservableList<XYChart.Data<Number, Number>> data = chart.getData().get(chart.getData().size() - 1).getData();
 
         // Поиск максимума интенсивности
-        double maxY = data.stream().mapToDouble(d -> d.getYValue().doubleValue()).max().getAsDouble();
+        double maxY = data.stream().mapToDouble(d -> d.getYValue().doubleValue()).max().orElseThrow(IllegalArgumentException::new);
 
         // Поиск точек на 95% высоты
         List<XYChart.Data<Number, Number>> points95 = data.stream()
@@ -107,7 +107,7 @@ public class StatisticsWindow extends Stage {
      */
     private double calculateCenterOfGravity(LineChart<Number, Number> chart) {
         double sumIntensityEnergy = 0;
-        int numPoints = chart.getData().get(chart.getData().size() - 1).getData().size();
+        double sumIntensity = 0;
 
         // Получаем данные один раз для эффективности
         List<XYChart.Data<Number, Number>> dataPoints = chart.getData().get(chart.getData().size() - 1).getData();
@@ -117,9 +117,10 @@ public class StatisticsWindow extends Stage {
             double energy = data.getXValue().doubleValue();
             double intensity = data.getYValue().doubleValue();
             sumIntensityEnergy += intensity * energy;
+            sumIntensity += intensity;
         }
 
-        return sumIntensityEnergy / numPoints;
+        return sumIntensityEnergy / sumIntensity;
     }
 
     /**
@@ -202,7 +203,6 @@ public class StatisticsWindow extends Stage {
             } else if (i > maxIndex) {
                 sumRight += data.get(i).getYValue().doubleValue();
             }
-            // Интенсивность в точке максимума не учитывается
         }
 
         // Вычислить индекс ассиметрии
