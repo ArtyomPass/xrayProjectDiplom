@@ -30,6 +30,8 @@ public class TabManager {
     protected ImageView mainImageView;
     protected TilePane thumbnailsTilePane;
     private Tab newTab;
+    private boolean isCroppingMode = false;
+    private ChartCropper currentCropper;
 
     /**
      * Конструктор TabManager.
@@ -301,9 +303,26 @@ public class TabManager {
 
     private void handleCorrectionButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
-        ChartCropper cropper = new ChartCropper(currentChart, 10);
-        cropper.cropChart();
+
+        if (isCroppingMode) {
+            // Отключаем режим обрезки
+            if (currentCropper != null) {
+                currentCropper.exitCroppingMode();
+                currentCropper = null; // Убедитесь, что текущий объект сброшен
+            }
+        } else {
+            // Включаем режим обрезки
+            correctionButton.setStyle("-fx-background-color: lightblue;");
+            currentCropper = new ChartCropper(currentChart);
+            currentCropper.setOnCropComplete(() -> {
+                correctionButton.setStyle("");
+                isCroppingMode = false;  // Обновить состояние
+            });
+            currentCropper.enterCroppingMode();
+            isCroppingMode = true;  // Обновить состояние
+        }
     }
+
 
     private void handleStatisticsButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);

@@ -55,7 +55,7 @@ public class SeriesManagementWindow extends Stage {
         updateSeriesList();
         seriesList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
                 handleSeriesSelection(newValue));
-        layout.getChildren().addAll(seriesList); // Добавление списка серий в layout
+        layout.getChildren().add(seriesList);
         Scene scene = new Scene(layout, 350, 300);
         scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
         this.setScene(scene);
@@ -76,7 +76,7 @@ public class SeriesManagementWindow extends Stage {
 
         if (!seriesList.getItems().isEmpty()) {
             GridPane lastSeriesInfo = seriesList.getItems().get(seriesList.getItems().size() - 1);
-            lastSeriesInfo.setStyle("-fx-background-color: lightgreen;"); // Последний элемент зелёный
+            lastSeriesInfo.setStyle("-fx-background-color: lightgreen;");
         }
     }
 
@@ -89,11 +89,11 @@ public class SeriesManagementWindow extends Stage {
      */
     private GridPane createSeriesInfo(XYChart.Series<Number, Number> series, ToggleGroup radioGroup) {
         Label nameLabel = new Label(series.getName());
-        ColorPicker colorPicker = colorPickersMap.computeIfAbsent(series, s -> createColorPicker(s));
+        ColorPicker colorPicker = colorPickersMap.computeIfAbsent(series, this::createColorPicker);
         Button removeButton = createRemoveButton(series);
         RadioButton radioButton = createRadioButton(series, radioGroup);
-        Button autoRangeButton = createAutoRangeButton(series); // Создаем кнопку авто диапазона
-        Button mirrorButton = createMirrorButton(series); // Создаем кнопку для зеркалирования
+        Button autoRangeButton = createAutoRangeButton(series);
+        Button mirrorButton = createMirrorButton(series);
 
         GridPane seriesInfo = new GridPane();
         seriesInfo.setHgap(10);
@@ -132,16 +132,6 @@ public class SeriesManagementWindow extends Stage {
     }
 
     /**
-     * Зеркалирование серии данных.
-     *
-     * @param series серия данных
-     */
-    /**
-     * Зеркалирование серии данных внутри своего диапазона.
-     *
-     * @param series серия данных
-     */
-    /**
      * Зеркалирование серии данных внутри своего диапазона.
      *
      * @param series серия данных
@@ -149,12 +139,10 @@ public class SeriesManagementWindow extends Stage {
     private void mirrorSeries(XYChart.Series<Number, Number> series) {
         ObservableList<XYChart.Data<Number, Number>> mirroredData = FXCollections.observableArrayList();
 
-        // Вычисление диапазона значений X
         double minX = series.getData().stream().mapToDouble(data -> data.getXValue().doubleValue()).min().orElse(0);
         double maxX = series.getData().stream().mapToDouble(data -> data.getXValue().doubleValue()).max().orElse(0);
         double centerX = (minX + maxX) / 2;
 
-        // Зеркалирование данных относительно центральной точки диапазона X
         for (XYChart.Data<Number, Number> data : series.getData()) {
             double mirroredX = 2 * centerX - data.getXValue().doubleValue();
             mirroredData.add(new XYChart.Data<>(mirroredX, data.getYValue()));
@@ -163,17 +151,14 @@ public class SeriesManagementWindow extends Stage {
         series.setData(mirroredData);
         mirroredStateMap.put(series, !mirroredStateMap.getOrDefault(series, false));
 
-        // Обновление таблицы
         SpectralDataTable.updateTableViewInTab(currentTab, series.getData(), tableViewToUpdate);
 
-        // Корректировка границ оси после зеркалирования
         if (!lineChart.getXAxis().isAutoRanging()) {
             adjustManualBounds();
         } else {
             adjustBounds(series);
         }
     }
-
 
     /**
      * Корректировка границ оси X в ручном режиме.
@@ -243,7 +228,6 @@ public class SeriesManagementWindow extends Stage {
         }
     }
 
-
     /**
      * Переключение в автоматический режим диапазона оси.
      */
@@ -274,7 +258,6 @@ public class SeriesManagementWindow extends Stage {
      */
     private Button createRemoveButton(XYChart.Series<Number, Number> series) {
         Button button = new Button("X");
-
         button.getStyleClass().add("remove-button");
         button.setOnAction(e -> {
             lineChart.getData().remove(series);
@@ -286,7 +269,7 @@ public class SeriesManagementWindow extends Stage {
     }
 
     /**
-     * Создание радиокнопки для перемещения серии в конец списка
+     * Создание радиокнопки для перемещения серии в конец списка.
      *
      * @param series серия данных
      * @param group  группа радио кнопок
@@ -311,23 +294,32 @@ public class SeriesManagementWindow extends Stage {
             int selectedIndex = seriesList.getSelectionModel().getSelectedIndex();
             XYChart.Series<Number, Number> selectedSeries = lineChart.getData().get(selectedIndex);
 
-            // Сбросить стиль всех серий на тонкий
+            // Сброс стилей всех серий
             resetAllSeriesStyles();
 
-            // Установить стиль для выбранной серии на жирный
+            // Установка стиля для выбранной серии на жирный
             setSeriesStyle(selectedSeries, true);
 
-            // Обновить таблицу
+            // Обновление таблицы
             SpectralDataTable.updateTableViewInTab(currentTab, selectedSeries.getData(), tableViewToUpdate);
         }
     }
+
+
+
 
     /**
      * Сброс стилей всех серий на тонкий.
      */
     private void resetAllSeriesStyles() {
-        lineChart.getData().forEach(series -> setSeriesStyle(series, false));
+        lineChart.getData().forEach(series -> {
+            setSeriesStyle(series, false);
+            updateSeriesColor(series, colorPickersMap.get(series).getValue());
+        });
     }
+
+
+
 
     /**
      * Перемещение выбранной серии в конец списка данных.
@@ -384,8 +376,11 @@ public class SeriesManagementWindow extends Stage {
      * @param newColor новый цвет
      */
     private void updateSeriesColor(XYChart.Series<Number, Number> series, Color newColor) {
+        colorPickersMap.get(series).setValue(newColor);
         Node seriesNode = series.getNode();
-        if (seriesNode != null) seriesNode.setStyle("-fx-stroke: " + toRgbString(newColor) + ";");
+        if (seriesNode != null) {
+            seriesNode.setStyle("-fx-stroke: " + toRgbString(newColor) + ";");
+        }
     }
 
     /**
@@ -407,9 +402,13 @@ public class SeriesManagementWindow extends Stage {
     private void setSeriesStyle(XYChart.Series<Number, Number> series, boolean bold) {
         Node seriesLine = series.getNode();
         if (seriesLine != null) {
-            seriesLine.setStyle(bold ? "-fx-stroke-width: 3;" : "-fx-stroke-width: 1;");
+            Color color = colorPickersMap.get(series).getValue();
+            String style = "-fx-stroke: " + toRgbString(color) + "; -fx-stroke-width: " + (bold ? "5" : "3") + ";";
+            seriesLine.setStyle(style);
         }
     }
+
+
 
     /**
      * Утолщение линий при закрытии окна в зависимости от типа серии.
@@ -419,23 +418,10 @@ public class SeriesManagementWindow extends Stage {
             Node seriesLine = series.getNode().lookup(".chart-series-line");
             if (seriesLine instanceof Shape) {
                 Shape line = (Shape) seriesLine;
-                String currentStyle = line.getStyle();
-                boolean isDashed = currentStyle != null && currentStyle.contains("-fx-stroke-dash-array");
-
-                if ("Baseline".equals(series.getName())) {
-                    if (isDashed) {
-                        line.setStyle("-fx-stroke-width: 1; " + currentStyle);
-                    } else {
-                        line.setStyle("-fx-stroke-width: 1; -fx-stroke: " + toRgbString((Color) line.getStroke()) + ";");
-                    }
-                } else {
-                    if (isDashed) {
-                        line.setStyle("-fx-stroke-width: 3; " + currentStyle);
-                    } else {
-                        line.setStrokeWidth(3);
-                    }
-                }
+                Color color = colorPickersMap.get(series).getValue();
+                line.setStyle("-fx-stroke: " + toRgbString(color) + "; -fx-stroke-width: 3;");
             }
         });
     }
+
 }
