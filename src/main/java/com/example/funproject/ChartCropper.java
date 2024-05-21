@@ -1,10 +1,17 @@
 package com.example.funproject;
 
+import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
@@ -16,13 +23,17 @@ public class ChartCropper {
     private XYChart.Series<Number, Number> peakSeries;
     private Runnable onCropComplete;
 
-    public ChartCropper(LineChart<Number, Number> lineChart) {
+    /**
+     * Конструктор класса ChartCropper
+     */
+    public ChartCropper(LineChart<Number, Number> lineChart, Runnable onCropComplete) {
         this.lineChart = lineChart;
+        this.onCropComplete = onCropComplete;
         this.verticalLineSeries = new XYChart.Series<>();
-        verticalLineSeries.setName("Vertical Line");
+        verticalLineSeries.setName("Линия обрезки");
 
         this.peakSeries = new XYChart.Series<>();
-        peakSeries.setName("Local Peaks");
+        peakSeries.setName("Локальные пики");
 
         lineChart.setCreateSymbols(false); // Отключить символы для основной серии
         lineChart.getData().add(verticalLineSeries);
@@ -38,30 +49,26 @@ public class ChartCropper {
         yAxis.setAutoRanging(false);
     }
 
-    public void setOnCropComplete(Runnable onCropComplete) {
-        this.onCropComplete = onCropComplete;
-    }
-
-    public void enterCroppingMode() {
-        enableChartCropping();
-    }
-
+    /**
+     * Метод для выхода из режима обрезки
+     */
     public void exitCroppingMode() {
         lineChart.setOnMouseMoved(null);
         lineChart.setOnMouseClicked(null);
-        if (lineChart.getData().contains(verticalLineSeries)) {
-            lineChart.getData().remove(verticalLineSeries);
-        }
+        lineChart.getData().remove(verticalLineSeries);
         if (onCropComplete != null) {
             onCropComplete.run();
         }
     }
 
-    private void enableChartCropping() {
+    /**
+     * Метод для включения режима обрезки
+     */
+    public void enableChartCropping() {
         lineChart.setOnMouseEntered(event -> verticalLineSeries.getNode().setVisible(true));
         lineChart.setOnMouseExited(event -> verticalLineSeries.getNode().setVisible(false));
-        lineChart.setOnMouseMoved(this::handleMouseMoved);
-        lineChart.setOnMouseClicked(this::handleMouseClicked);
+        lineChart.setOnMouseMoved(this::handleMouseEvent);
+        lineChart.setOnMouseClicked(this::handleMouseEvent);
 
         // Изначально скрыть вертикальную линию
         verticalLineSeries.getNode().setVisible(false);
@@ -70,73 +77,60 @@ public class ChartCropper {
         verticalLineSeries.getNode().lookup(".chart-series-line").setStyle("-fx-stroke: red; -fx-stroke-width: 1px;");
     }
 
-    private void handleMouseMoved(MouseEvent event) {
-        // Преобразование координат мыши из сцены в локальные координаты графика
+    /**
+     * Метод для обработки событий мыши
+     */
+    private void handleMouseEvent(MouseEvent event) {
         double mouseX = event.getSceneX();
         double localX = lineChart.getXAxis().sceneToLocal(mouseX, 0).getX();
-
-        // Преобразование localX в соответствующее значение по оси X
         NumberAxis xAxis = (NumberAxis) lineChart.getXAxis();
         NumberAxis yAxis = (NumberAxis) lineChart.getYAxis();
         Number xValue = xAxis.getValueForDisplay(localX);
 
-        // Очистка предыдущих данных линии
-        verticalLineSeries.getData().clear();
+        if (event.getEventType() == MouseEvent.MOUSE_MOVED) {
+            // Очистка предыдущих данных линии
+            verticalLineSeries.getData().clear();
 
-        // Добавление новых точек для вертикальной линии
-        verticalLineSeries.getData().add(new XYChart.Data<>(xValue, yAxis.getLowerBound()));
-        verticalLineSeries.getData().add(new XYChart.Data<>(xValue, yAxis.getUpperBound()));
-    }
-
-    private void handleMouseClicked(MouseEvent event) {
-        if (event.getButton() == MouseButton.PRIMARY) {
-            double mouseX = event.getSceneX();
-            double localX = lineChart.getXAxis().sceneToLocal(mouseX, 0).getX();
-
-            // Преобразование localX в соответствующее значение по оси X
-            NumberAxis xAxis = (NumberAxis) lineChart.getXAxis();
-            Number xValue = xAxis.getValueForDisplay(localX);
-
+            // Добавление новых точек для вертикальной линии
+            verticalLineSeries.getData().add(new XYChart.Data<>(xValue, yAxis.getLowerBound()));
+            verticalLineSeries.getData().add(new XYChart.Data<>(xValue, yAxis.getUpperBound()));
+        } else if (event.getEventType() == MouseEvent.MOUSE_CLICKED && event.getButton() == MouseButton.PRIMARY) {
             // Обрезка данных серий
-            cropData(xValue.doubleValue());
+            for (XYChart.Series<Number, Number> series : lineChart.getData()) {
+                if (!series.equals(verticalLineSeries) && !series.equals(peakSeries)) {
+                    Iterator<XYChart.Data<Number, Number>> iterator = series.getData().iterator();
+                    while (iterator.hasNext()) {
+                        XYChart.Data<Number, Number> data = iterator.next();
+                        if (data.getXValue().doubleValue() < xValue.doubleValue()) {
+                            iterator.remove();
+                        }
+                    }
+                }
+            }
 
-            // Выделение локальных пиков точками
-            highlightLocalPeaks();
+            // Вызов окна для ввода параметров threshold и distance
+            ParametersWindow parametersWindow = new ParametersWindow(this);
+            parametersWindow.showAndWait();
 
             // Установка нового нижнего предела для оси X
             xAxis.setLowerBound(xValue.doubleValue());
             xAxis.setAutoRanging(false);
 
             // Фиксация диапазона оси Y для предотвращения изменений
-            NumberAxis yAxis = (NumberAxis) lineChart.getYAxis();
             yAxis.setLowerBound(yAxis.getLowerBound());
             yAxis.setUpperBound(yAxis.getUpperBound());
             yAxis.setAutoRanging(false);
 
             // Удаление вертикальной линии как серии данных и выход из режима обрезки
             lineChart.getData().remove(verticalLineSeries);
-            exitCroppingMode();  // Выход из режима обрезки
+            exitCroppingMode();
         }
     }
 
-    private void cropData(double xValue) {
-        for (XYChart.Series<Number, Number> series : lineChart.getData()) {
-            if (!series.equals(verticalLineSeries) && !series.equals(peakSeries)) {
-                Iterator<XYChart.Data<Number, Number>> iterator = series.getData().iterator();
-                while (iterator.hasNext()) {
-                    XYChart.Data<Number, Number> data = iterator.next();
-                    if (data.getXValue().doubleValue() < xValue) {
-                        iterator.remove();
-                    }
-                }
-            }
-        }
-    }
-
-    private void highlightLocalPeaks() {
-        double threshold = 10.0; // Пример порогового уровня
-        int distance = 10; // Пример расстояния для проверки
-
+    /**
+     * Метод для выделения локальных пиков
+     */
+    public void highlightLocalPeaks(double threshold, int distance) {
         peakSeries.getData().clear();
         for (XYChart.Series<Number, Number> series : lineChart.getData()) {
             if (!series.equals(verticalLineSeries) && !series.equals(peakSeries)) {
@@ -157,8 +151,7 @@ public class ChartCropper {
                     }
 
                     if (isPeak) {
-                        // Это истинный локальный пик, превышающий порог
-                        System.out.println("Local peak found at X: " + currentData.getXValue() + ", Y: " + currentData.getYValue());
+                        System.out.println("Локальный пик найден на X: " + currentData.getXValue() + ", Y: " + currentData.getYValue());
                         XYChart.Data<Number, Number> peakData = new XYChart.Data<>(currentData.getXValue(), currentData.getYValue());
                         Circle circle = new Circle(5, Color.BLUE);
                         peakData.setNode(circle);
@@ -168,8 +161,54 @@ public class ChartCropper {
             }
         }
 
-        // Отключить линии для серии пиков
         peakSeries.getNode().lookup(".chart-series-line").setStyle("-fx-stroke: transparent;");
     }
 
+    /**
+     * Внутренний класс для окна ввода параметров
+     */
+    public class ParametersWindow extends Stage {
+        public ParametersWindow(ChartCropper cropper) {
+            setTitle("Ввод параметров пиков");
+            initModality(Modality.APPLICATION_MODAL);
+
+            Label thresholdLabel = new Label("Порог:");
+            TextField thresholdField = new TextField("11.0");
+
+            Label distanceLabel = new Label("Дистанция:");
+            TextField distanceField = new TextField("10");
+
+            Button okButton = new Button("ОК");
+            okButton.setOnAction(event -> {
+                try {
+                    double threshold = Double.parseDouble(thresholdField.getText().trim());
+                    int distance = Integer.parseInt(distanceField.getText().trim());
+                    cropper.highlightLocalPeaks(threshold, distance);
+                    close();
+                } catch (NumberFormatException e) {
+                    System.err.println("Неверный ввод: " + e.getMessage());
+                }
+            });
+
+            Button cancelButton = new Button("Отмена");
+            cancelButton.setOnAction(event -> close());
+
+            GridPane gridPane = new GridPane();
+            gridPane.setVgap(10);
+            gridPane.setHgap(10);
+            gridPane.add(thresholdLabel, 0, 0);
+            gridPane.add(thresholdField, 1, 0);
+            gridPane.add(distanceLabel, 0, 1);
+            gridPane.add(distanceField, 1, 1);
+            gridPane.add(okButton, 0, 2);
+            gridPane.add(cancelButton, 1, 2);
+
+            Scene scene = new Scene(gridPane, 250, 100);
+            setScene(scene);
+        }
+
+        public void showAndWait() {
+            super.showAndWait();
+        }
+    }
 }

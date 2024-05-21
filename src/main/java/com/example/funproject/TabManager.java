@@ -301,25 +301,25 @@ public class TabManager {
         smoothWindow.show();
     }
 
+
     private void handleCorrectionButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
 
-        if (isCroppingMode) {
+        if (isCroppingMode && currentCropper != null) {
             // Отключаем режим обрезки
-            if (currentCropper != null) {
-                currentCropper.exitCroppingMode();
-                currentCropper = null; // Убедитесь, что текущий объект сброшен
-            }
+            currentCropper.exitCroppingMode();
+            currentCropper = null;
+            correctionButton.setStyle("");
+            isCroppingMode = false;
         } else {
             // Включаем режим обрезки
             correctionButton.setStyle("-fx-background-color: lightblue;");
-            currentCropper = new ChartCropper(currentChart);
-            currentCropper.setOnCropComplete(() -> {
+            currentCropper = new ChartCropper(currentChart, () -> {
                 correctionButton.setStyle("");
-                isCroppingMode = false;  // Обновить состояние
+                isCroppingMode = false;
             });
-            currentCropper.enterCroppingMode();
-            isCroppingMode = true;  // Обновить состояние
+            currentCropper.enableChartCropping();
+            isCroppingMode = true;
         }
     }
 
