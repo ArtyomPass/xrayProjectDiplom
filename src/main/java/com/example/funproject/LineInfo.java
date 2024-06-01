@@ -5,6 +5,7 @@ import javafx.scene.shape.Line;
 
 public class LineInfo {
 
+    private XYChart.Series<Number, Number> series; // Добавленное поле
     private Line line;
     private double xPosition; // Координата X линии
     private String standardType; // Используем стандартType вместо peakType
@@ -17,6 +18,7 @@ public class LineInfo {
                     String standardType,
                     String elementName,
                     double angle) {
+        this.series = series; // Инициализация series
         this.line = line;
         this.xPosition = xPosition;
         this.standardType = standardType; // Инициализация стандартType
@@ -25,6 +27,14 @@ public class LineInfo {
     }
 
     // Геттеры и сеттеры
+
+    public XYChart.Series<Number, Number> getSeries() {
+        return series;
+    }
+
+    public void setSeries(XYChart.Series<Number, Number> series) {
+        this.series = series;
+    }
 
     public Line getLine() {
         return line;
@@ -69,7 +79,8 @@ public class LineInfo {
     @Override
     public String toString() {
         return "LineInfo{" +
-                "line=" + line +
+                "series=" + series +
+                ", line=" + line +
                 ", xPosition=" + xPosition +
                 ", standardType='" + standardType + '\'' +
                 ", elementName='" + elementName + '\'' +

@@ -10,9 +10,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,7 +74,7 @@ public class CalibrationDialog extends Stage {
         orderStandardField.setText("1");
         dSpacingField = new TextField();
         dSpacingField.setPromptText("Значение межплоскостного расстояния");
-        dSpacingField.setText("2.38");
+        dSpacingField.setText("2.36013");
         dispersionLabel = new Label("Значение дисперсии:");
 
         // --- Кнопки ---
@@ -145,7 +144,8 @@ public class CalibrationDialog extends Stage {
 
     private void performCalibration(ActionEvent actionEvent) {
         // Основной метод, вызывающий второстепенные методы для выполнения калибровки
-        double[] calibratedEnergies = performTwoStandardsCalibration();
+        List<LineInfo> selectedLines = linesFromPhotoRadioButton.isSelected() ? lineImageInfos : lineChartInfos;
+        double[] calibratedEnergies = performTwoStandardsCalibration(selectedLines);
 
         if (calibratedEnergies != null) {
             updateChartAndTable(calibratedEnergies);
@@ -154,14 +154,16 @@ public class CalibrationDialog extends Stage {
         this.close();
     }
 
-    private double[] performTwoStandardsCalibration() {
+
+
+    private double[] performTwoStandardsCalibration(List<LineInfo> lineInfos) {
         // Получение координат линий и углов для стандарта
-        LineInfo line1 = lineChartInfos.stream()
+        LineInfo line1 = lineInfos.stream()
                 .filter(line -> line.getStandardType().equals("X1"))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Line with standardType 'X1' not found"));
 
-        LineInfo line2 = lineChartInfos.stream()
+        LineInfo line2 = lineInfos.stream()
                 .filter(line -> line.getStandardType().equals("X2"))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Line with standardType 'X2' not found"));
@@ -170,24 +172,26 @@ public class CalibrationDialog extends Stage {
         System.out.println("\n\n\nLine1 (X1): " + line1);
         System.out.println("Line2 (X2): " + line2);
 
-        double x1 = line1.getXPosition();
-        double x2 = line2.getXPosition();
-        double angle1 = line1.getAngle(); // Угол в градусах для line1
-        double angle2 = line2.getAngle(); // Угол в градусах для line2
+        BigDecimal x1 = BigDecimal.valueOf(line1.getXPosition());
+        BigDecimal x2 = BigDecimal.valueOf(line2.getXPosition());
+        BigDecimal angle1 = BigDecimal.valueOf(line1.getAngle()); // Угол в градусах для line1
+        BigDecimal angle2 = BigDecimal.valueOf(line2.getAngle()); // Угол в градусах для line2
 
         // Выводим координаты и углы в консоль
         System.out.println("x1: " + x1 + ", angle1: " + angle1);
         System.out.println("x2: " + x2 + ", angle2: " + angle2);
 
         // Рассчет угловой дисперсии
-        double angularDispersion = (angle1 - angle2) / (x2 - x1);
+        BigDecimal deltaAngle = angle1.subtract(angle2);
+        BigDecimal deltaX = x2.subtract(x1);
+        BigDecimal angularDispersion = deltaAngle.divide(deltaX, MathContext.DECIMAL128);
 
         // Выводим угловую дисперсию для проверки
         System.out.println("Угловая дисперсия: " + angularDispersion);
 
         // Получаем значения порядка отражения и межплоскостного расстояния
         int n = Integer.parseInt(orderStandardField.getText());
-        double d = Double.parseDouble(dSpacingField.getText());
+        BigDecimal d = new BigDecimal(dSpacingField.getText());
 
         // Находим последнюю серию данных с именем "Спектр"
         Optional<XYChart.Series<Number, Number>> intensitiesSeriesOptional = currentChart.getData().stream()
@@ -220,16 +224,17 @@ public class CalibrationDialog extends Stage {
 
         // Рассчитываем угол, длину волны и энергетические единицы для каждой точки спектра
         for (int i = 0; i < xPositions.length; i++) {
-            double angle = angle1 + (x1 - xPositions[i]) * angularDispersion;
-            double wavelength = (d * Math.sin(Math.toRadians(angle))) / n;
-            double energy = 12398.1 / wavelength;
-            energies[i] = energy;
-           }
+            BigDecimal xPos = BigDecimal.valueOf(xPositions[i]);
+            BigDecimal angle = angle1.add((x1.subtract(xPos)).multiply(angularDispersion, MathContext.DECIMAL128));
+            BigDecimal sinAngle = new BigDecimal(Math.sin(Math.toRadians(angle.doubleValue())), MathContext.DECIMAL128);
+            BigDecimal wavelength = (d.multiply(sinAngle)).divide(BigDecimal.valueOf(n), MathContext.DECIMAL128);
+            BigDecimal energy = BigDecimal.valueOf(12398.1).divide(wavelength, MathContext.DECIMAL128);
+            energies[i] = energy.doubleValue();
+        }
 
         // Возвращаем массив энергетических единиц
         return energies;
     }
-
 
 
     private void updateChartAndTable(double[] calibratedEnergies) {
@@ -275,16 +280,12 @@ public class CalibrationDialog extends Stage {
         }
     }
 
-
-
-
     public static void removeSeriesByName(XYChart<Number, Number> chart, String seriesName) {
         List<XYChart.Series<Number, Number>> seriesToRemove = chart.getData().stream()
                 .filter(series -> series.getName().equals(seriesName))
                 .collect(Collectors.toList());
         chart.getData().removeAll(seriesToRemove);
     }
-
 
     private void showErrorDialog(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);

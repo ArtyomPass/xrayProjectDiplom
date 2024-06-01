@@ -3,11 +3,13 @@ package com.example.funproject;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Side;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -39,11 +41,11 @@ public class HelloController {
     protected Map<Tab, List<Image>> xRayImages = new HashMap<>();
     private Map<Tab, ImageProcessor> imageProcessors = new HashMap<>();
     protected Map<Image, List<LineInfo>> imageLines;
-    protected Map<Tab, List<LineInfo>> chartLines;
+    protected Map<Tab, List<LineInfo>> chartLines; // Здесь таб для графиков
     protected Map<Tab, TableView<SpectralDataTable.SpectralData>> spectralDataTableViews = new HashMap<>();
 
     // Параметры для сглаживания
-    private int kernelSize = 9;
+    private int kernelSize = 5;
 
     /**
      * Инициализация контроллера.
@@ -93,12 +95,13 @@ public class HelloController {
         spectralDataVisualization.importTableData(tableViewToUpdate, selectedFile);
     }
 
+
     /**
-     * Сглаживание изображения.
+     * Обработка изображения.
      *
      * @param event событие, вызвавшее метод
      */
-    public void handleImageSmoothing(ActionEvent event) {
+    public void processImage(ActionEvent event) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
 
         Image selectedImage = imageProcessors.get(currentTab).selectedImage;
@@ -111,20 +114,13 @@ public class HelloController {
         // Контекстное меню с опциями обработки
         ContextMenu processingMenu = new ContextMenu();
         MenuItem smoothItem = new MenuItem("Сгладить");
-        MenuItem densityItem = new MenuItem("Денситометрия");
-        processingMenu.getItems().addAll(smoothItem, densityItem);
+        processingMenu.getItems().addAll(smoothItem);
 
         // Обработчик события сглаживания
         smoothItem.setOnAction(e -> {
             Image smoothedImage = dataPreprocessing.imageSmoothing(selectedImage, kernelSize);
             updateImageInTab(currentTab, selectedImage, smoothedImage);
             imageProcessors.get(currentTab).selectedImage = smoothedImage;
-        });
-
-        // Обработчик события денситометрии
-        densityItem.setOnAction(e -> {
-            WritableImage densityImage = dataPreprocessing.applyDensity(selectedImage);
-            updateImageInTab(currentTab, selectedImage, densityImage);
         });
 
         // Отображение контекстного меню
@@ -154,7 +150,12 @@ public class HelloController {
      *
      * @param actionEvent Событие, вызвавшее метод.
      */
-
+    /**
+     * Отображает контекстное меню для выбора способа визуализации спектра.
+     * Позволяет построить график по изображению или по таблице.
+     *
+     * @param actionEvent Событие, вызвавшее метод.
+     */
     @FXML
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
@@ -176,6 +177,10 @@ public class HelloController {
             }
             // Обновляем таблицу спектральных данных
             SpectralDataTable.updateTableViewInTab(currentTab, new ArrayList<>(series.getData()), spectralDataTableViews.get(currentTab));
+
+            // Получаем ImageView и устанавливаем курсор и линии
+            ImageView imageView = imageProcessors.get(currentTab).imageView;
+            spectralDataVisualization.setImageViewCursorAndLines(imageView);
         });
 
         // Пункт меню для построения графика по таблице
@@ -198,7 +203,6 @@ public class HelloController {
         // Отображение контекстного меню
         visualizationMenu.show((Node) actionEvent.getSource(), Side.BOTTOM, 0, 0);
     }
-
 
     /**
      * Калибровка спектрометра.

@@ -10,9 +10,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BackgroundSubtractionWindow extends Stage {
 
-    // Элементы управления для линейного фона
+    private ComboBox<String> backgroundTypeComboBox;
+
+    // Elements for linear background subtraction
     private Label x1Label;
     private TextField x1TextField;
     private Button x1Button;
@@ -21,44 +26,80 @@ public class BackgroundSubtractionWindow extends Stage {
     private Button x2Button;
     private Button subtractButton;
 
-    private TextField currentWaitingTextField = null;
+    // Elements for exponential background subtraction
+    private Label aLabel;
+    private TextField aTextField;
+    private Button aButton;
+    private Label bLabel;
+    private TextField bTextField;
+    private Button bButton;
+    private Label nLabel;
+    private TextField nTextField;
+    private Button nButton;
+    private Label cLabel;
+    private TextField cTextField;
+    private Button cButton;
 
-    // Конструктор окна вычитания фона
+    private TextField currentWaitingTextField = null;
+    private List<Double> selectedPoints = new ArrayList<>();
+
+    // Constructor for the background subtraction window
     public BackgroundSubtractionWindow(LineChart<Number, Number> chart) {
 
-        // Инициализация элементов управления
+        // Initialize control elements
         initializeControls();
 
-        // Создание GridPane для размещения элементов управления
+        // Create GridPane for arranging control elements
         GridPane gridPane = createGridPane();
 
-        // Добавление элементов управления на GridPane
+        // Add control elements to GridPane
         addControlsToGridPane(gridPane);
 
-        // Настройка окна
+        // Configure the window
         configureWindow(gridPane);
 
-        // Обработка нажатия кнопки "Вычесть фон"
+        // Handle subtract button click
         handleSubtractButtonClick(chart);
 
-        // Обработка нажатия кнопок выбора точек на графике
+        // Handle point selection button clicks
         handlePointSelectionButtonsClick(chart);
+
+        // Handle background type selection
+        handleBackgroundTypeSelection();
     }
 
-    // Инициализация элементов управления
+    // Initialize control elements
     private void initializeControls() {
+        backgroundTypeComboBox = new ComboBox<>();
+        backgroundTypeComboBox.getItems().addAll("Линейный", "Экспоненциальный");
+        backgroundTypeComboBox.setValue("Линейный"); // Set initial value
+
         subtractButton = new Button("Вычесть фон");
 
-        // Элементы для линейного фона
+        // Elements for linear background subtraction
         x1Label = new Label("X1:");
         x1TextField = new TextField();
         x1Button = new Button("...");
         x2Label = new Label("X2:");
         x2TextField = new TextField();
         x2Button = new Button("...");
+
+        // Elements for exponential background subtraction
+        aLabel = new Label("a:");
+        aTextField = new TextField();
+        aButton = new Button("...");
+        bLabel = new Label("b:");
+        bTextField = new TextField();
+        bButton = new Button("...");
+        nLabel = new Label("n:");
+        nTextField = new TextField();
+        nButton = new Button("...");
+        cLabel = new Label("c:");
+        cTextField = new TextField();
+        cButton = new Button("...");
     }
 
-    // Создание GridPane для размещения элементов управления
+    // Create GridPane for arranging control elements
     private GridPane createGridPane() {
         GridPane gridPane = new GridPane();
         gridPane.setHgap(10);
@@ -67,42 +108,73 @@ public class BackgroundSubtractionWindow extends Stage {
         return gridPane;
     }
 
-    // Добавление элементов управления на GridPane
+    // Add control elements to GridPane
     private void addControlsToGridPane(GridPane gridPane) {
-        gridPane.add(new Label("Тип фона: Линейный"), 0, 0);
-        gridPane.add(subtractButton, 1, 6);
+        gridPane.add(new Label("Тип фона:"), 0, 0);
+        gridPane.add(backgroundTypeComboBox, 1, 0);
+        gridPane.add(subtractButton, 1, 8);
 
-        // Добавление элементов для линейного фона
+        // Add elements for linear background subtraction
         gridPane.add(x1Label, 0, 1);
         gridPane.add(x1TextField, 1, 1);
         gridPane.add(x1Button, 2, 1);
         gridPane.add(x2Label, 0, 2);
         gridPane.add(x2TextField, 1, 2);
         gridPane.add(x2Button, 2, 2);
+
+        // Add elements for exponential background subtraction in a 2x2 grid
+        gridPane.add(aLabel, 0, 3);
+        gridPane.add(aTextField, 1, 3);
+        gridPane.add(aButton, 2, 3);
+        gridPane.add(bLabel, 0, 4);
+        gridPane.add(bTextField, 1, 4);
+        gridPane.add(bButton, 2, 4);
+        gridPane.add(nLabel, 0, 5);
+        gridPane.add(nTextField, 1, 5);
+        gridPane.add(nButton, 2, 5);
+        gridPane.add(cLabel, 0, 6);
+        gridPane.add(cTextField, 1, 6);
+        gridPane.add(cButton, 2, 6);
     }
 
-    // Настройка окна
+    // Configure the window
     private void configureWindow(GridPane gridPane) {
         this.setTitle("Вычитание фона");
         this.setScene(new Scene(gridPane));
         this.setAlwaysOnTop(true);
     }
 
-    // Обработка нажатия кнопки "Вычесть фон"
+    // Handle subtract button click
     private void handleSubtractButtonClick(LineChart<Number, Number> chart) {
-        subtractButton.setOnAction(event -> subtractLinearBackground(chart));
+        subtractButton.setOnAction(event -> {
+            String backgroundType = backgroundTypeComboBox.getValue();
+            if ("Линейный".equals(backgroundType)) {
+                subtractLinearBackground(chart);
+            } else if ("Экспоненциальный".equals(backgroundType)) {
+                if (selectedPoints.size() == 4) {
+                    calculateExponentialParameters();
+                    subtractExponentialBackground(chart);
+                } else {
+                    showAlert("Пожалуйста, выберите четыре точки на графике для экспоненциального вычитания фона.");
+                }
+            }
+        });
     }
 
-    // Обработка нажатия кнопок выбора точек на графике
+    // Handle point selection button clicks
     private void handlePointSelectionButtonsClick(LineChart<Number, Number> chart) {
         x1Button.setOnAction(event -> setTextFieldToWaitingMode(chart, x1TextField));
         x2Button.setOnAction(event -> setTextFieldToWaitingMode(chart, x2TextField));
+        aButton.setOnAction(event -> setTextFieldToWaitingMode(chart, aTextField));
+        bButton.setOnAction(event -> setTextFieldToWaitingMode(chart, bTextField));
+        nButton.setOnAction(event -> setTextFieldToWaitingMode(chart, nTextField));
+        cButton.setOnAction(event -> setTextFieldToWaitingMode(chart, cTextField));
     }
 
-    // Установка текстового поля в режим ожидания
+    // Set text field to waiting mode
     private void setTextFieldToWaitingMode(LineChart<Number, Number> chart, TextField textField) {
         if (currentWaitingTextField != null) {
-            currentWaitingTextField.setStyle(""); // Сбросить стиль предыдущего текстового поля
+            currentWaitingTextField.setStyle(""); // Reset style of previous text field
         }
         currentWaitingTextField = textField;
         textField.setStyle("-fx-background-color: yellow;");
@@ -114,43 +186,44 @@ public class BackgroundSubtractionWindow extends Stage {
             double mouseXValue = xAxis.sceneToLocal(sceneX, sceneY).getX();
             Number xValue = xAxis.getValueForDisplay(mouseXValue);
             textField.setText(String.valueOf(xValue));
-            textField.setStyle(""); // Сбросить стиль
+            selectedPoints.add(xValue.doubleValue());
+            textField.setStyle(""); // Reset style
 
             currentWaitingTextField = null;
 
-            // Сбросить обработчик событий
+            // Reset event handler
             chart.setOnMouseClicked(null);
         });
     }
 
-    // Вычитание линейного фона
+    // Linear background subtraction
     private void subtractLinearBackground(LineChart<Number, Number> chart) {
         XYChart.Series<Number, Number> lastSeries = chart.getData().get(chart.getData().size() - 1);
         ObservableList<XYChart.Data<Number, Number>> data = lastSeries.getData();
 
-        // Получение значений X1 и X2
+        // Get X1 and X2 values
         double x1 = Double.parseDouble(x1TextField.getText());
         double x2 = Double.parseDouble(x2TextField.getText());
 
-        // Найти ближайшие точки к X1 и X2
+        // Find closest points to X1 and X2
         XYChart.Data<Number, Number> point1 = findClosestPoint(data, x1);
         XYChart.Data<Number, Number> point2 = findClosestPoint(data, x2);
 
-        // Получить значения y1 и y2 из ближайших точек
+        // Get y1 and y2 values from closest points
         double y1 = point1.getYValue().doubleValue();
         double y2 = point2.getYValue().doubleValue();
 
-        // Вычисление коэффициентов линейной функции (y = mx + b)
+        // Calculate coefficients of linear function (y = mx + b)
         double m = (y2 - y1) / (point2.getXValue().doubleValue() - point1.getXValue().doubleValue());
         double b = y1 - m * point1.getXValue().doubleValue();
 
-        // Создать новую серию для вычтенных данных и линию фона
+        // Create new series for subtracted data and background line
         XYChart.Series<Number, Number> subtractedSeries = new XYChart.Series<>();
         subtractedSeries.setName("Intensities");
         XYChart.Series<Number, Number> backgroundLineSeries = new XYChart.Series<>();
         backgroundLineSeries.setName("Baseline");
 
-        // Вычитание фона и добавление точек в новую серию
+        // Subtract background and add points to new series
         for (XYChart.Data<Number, Number> point : data) {
             double x = point.getXValue().doubleValue();
             double yValue = point.getYValue().doubleValue();
@@ -160,7 +233,7 @@ public class BackgroundSubtractionWindow extends Stage {
             backgroundLineSeries.getData().add(new XYChart.Data<>(x, backgroundValue));
         }
 
-        // Добавить серии на график и скрыть легенду
+        // Add series to chart and hide legend
         chart.getData().clear();
         chart.getData().add(backgroundLineSeries);
         backgroundLineSeries.getNode().lookup(".chart-series-line").setStyle("-fx-stroke-width: 1; -fx-stroke-dash-array: 2 2;");
@@ -168,7 +241,42 @@ public class BackgroundSubtractionWindow extends Stage {
         chart.setLegendVisible(false);
     }
 
-    // Поиск ближайшей точки к заданному значению x
+    // Exponential background subtraction
+    private void subtractExponentialBackground(LineChart<Number, Number> chart) {
+        XYChart.Series<Number, Number> lastSeries = chart.getData().get(chart.getData().size() - 1);
+        ObservableList<XYChart.Data<Number, Number>> data = lastSeries.getData();
+
+        // Get a, b, n, and c values
+        double a = Double.parseDouble(aTextField.getText());
+        double b = Double.parseDouble(bTextField.getText());
+        double n = Double.parseDouble(nTextField.getText());
+        double c = Double.parseDouble(cTextField.getText());
+
+        // Create new series for subtracted data and background curve
+        XYChart.Series<Number, Number> subtractedSeries = new XYChart.Series<>();
+        subtractedSeries.setName("Intensities");
+        XYChart.Series<Number, Number> backgroundCurveSeries = new XYChart.Series<>();
+        backgroundCurveSeries.setName("Baseline");
+
+        // Subtract background and add points to new series
+        for (XYChart.Data<Number, Number> point : data) {
+            double x = point.getXValue().doubleValue();
+            double yValue = point.getYValue().doubleValue();
+            double backgroundValue = 1 / (a + b * Math.pow(x, n) + Math.exp(a * x)) + c;
+            double subtractedY = yValue - backgroundValue;
+            subtractedSeries.getData().add(new XYChart.Data<>(x, subtractedY));
+            backgroundCurveSeries.getData().add(new XYChart.Data<>(x, backgroundValue));
+        }
+
+        // Add series to chart and hide legend
+        chart.getData().clear();
+        chart.getData().add(backgroundCurveSeries);
+        backgroundCurveSeries.getNode().lookup(".chart-series-line").setStyle("-fx-stroke-width: 1; -fx-stroke-dash-array: 2 2;");
+        chart.getData().add(subtractedSeries);
+        chart.setLegendVisible(false);
+    }
+
+    // Find closest point to given x value
     private XYChart.Data<Number, Number> findClosestPoint(ObservableList<XYChart.Data<Number, Number>> data, double x) {
         XYChart.Data<Number, Number> closestPoint = null;
         double minDistance = Double.MAX_VALUE;
@@ -180,5 +288,84 @@ public class BackgroundSubtractionWindow extends Stage {
             }
         }
         return closestPoint;
+    }
+
+    // Calculate exponential parameters using the selected points
+    private void calculateExponentialParameters() {
+        // Implement the method to calculate the parameters a, b, n, and c using the selected points
+        // For simplicity, you can assign some dummy values to these parameters
+        double a = 1.0;
+        double b = 1.0;
+        double n = 1.0;
+        double c = 1.0;
+
+        // Set calculated values to the respective text fields
+        aTextField.setText(String.valueOf(a));
+        bTextField.setText(String.valueOf(b));
+        nTextField.setText(String.valueOf(n));
+        cTextField.setText(String.valueOf(c));
+    }
+
+    // Handle background type selection
+    private void handleBackgroundTypeSelection() {
+        backgroundTypeComboBox.setOnAction(event -> {
+            String selectedType = backgroundTypeComboBox.getValue();
+            boolean isLinear = "Линейный".equals(selectedType);
+
+            // Show/hide elements for linear background subtraction
+            x1Label.setVisible(isLinear);
+            x1TextField.setVisible(isLinear);
+            x1Button.setVisible(isLinear);
+            x2Label.setVisible(isLinear);
+            x2TextField.setVisible(isLinear);
+            x2Button.setVisible(isLinear);
+
+            // Show/hide elements for exponential background subtraction
+            aLabel.setVisible(!isLinear);
+            aTextField.setVisible(!isLinear);
+            aButton.setVisible(!isLinear);
+            bLabel.setVisible(!isLinear);
+            bTextField.setVisible(!isLinear);
+            bButton.setVisible(!isLinear);
+            nLabel.setVisible(!isLinear);
+            nTextField.setVisible(!isLinear);
+            nButton.setVisible(!isLinear);
+            cLabel.setVisible(!isLinear);
+            cTextField.setVisible(!isLinear);
+            cButton.setVisible(!isLinear);
+        });
+
+        // Initially show elements for linear background subtraction
+        String selectedType = backgroundTypeComboBox.getValue();
+        boolean isLinear = "Линейный".equals(selectedType);
+
+        x1Label.setVisible(isLinear);
+        x1TextField.setVisible(isLinear);
+        x1Button.setVisible(isLinear);
+        x2Label.setVisible(isLinear);
+        x2TextField.setVisible(isLinear);
+        x2Button.setVisible(isLinear);
+
+        aLabel.setVisible(!isLinear);
+        aTextField.setVisible(!isLinear);
+        aButton.setVisible(!isLinear);
+        bLabel.setVisible(!isLinear);
+        bTextField.setVisible(!isLinear);
+        bButton.setVisible(!isLinear);
+        nLabel.setVisible(!isLinear);
+        nTextField.setVisible(!isLinear);
+        nButton.setVisible(!isLinear);
+        cLabel.setVisible(!isLinear);
+        cTextField.setVisible(!isLinear);
+        cButton.setVisible(!isLinear);
+    }
+
+    // Show alert dialog
+    private void showAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Предупреждение");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

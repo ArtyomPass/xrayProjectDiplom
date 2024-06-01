@@ -1,14 +1,20 @@
 package com.example.funproject;
 
-import javafx.collections.FXCollections;
-import javafx.scene.chart.LineChart;
+import javafx.beans.binding.Bindings;
+import javafx.scene.Cursor;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelReader;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.chart.XYChart;
+import javafx.scene.chart.LineChart;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
+import javafx.collections.FXCollections;
 import javafx.scene.image.Image;
-import javafx.scene.image.PixelReader;
-import javafx.scene.paint.Color;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,6 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SpectralDataVisualization {
+
+    private Line line1 = new Line();
+    private Line line2 = new Line();
+    private double initialY; // Исходная координата Y клика
 
     public SpectralDataVisualization() {
         // Пустой конструктор
@@ -134,5 +144,68 @@ public class SpectralDataVisualization {
         currentChart.getData().add(series);
         currentChart.setCreateSymbols(false); // Отключаем отображение символов точек данных
         currentChart.setLegendVisible(false); // Отключаем отображение легенды
+    }
+
+    /**
+     * Устанавливает курсор для ImageView и добавляет линии, следующие за курсором.
+     *
+     * @param imageView ImageView для установки курсора
+     */
+    public void setImageViewCursorAndLines(ImageView imageView) {
+        imageView.setOnMouseEntered(event -> imageView.setCursor(Cursor.CROSSHAIR));
+        imageView.setOnMouseExited(event -> imageView.setCursor(Cursor.DEFAULT));
+
+        imageView.setOnMousePressed(event -> {
+            Pane parentPane = (Pane) imageView.getParent();
+            initialY = event.getY();
+
+            // Установка начальных координат для линий
+            addHorizontalLine(initialY, imageView, parentPane, line1);
+            addHorizontalLine(initialY, imageView, parentPane, line2);
+        });
+
+        imageView.setOnMouseDragged(event -> updateLines(event, imageView));
+        imageView.setOnMouseReleased(event -> updateLines(event, imageView));
+    }
+
+    private void addHorizontalLine(double yClick, ImageView imageView, Pane parentPane, Line line) {
+        line.setStroke(Color.RED);
+        line.setStrokeWidth(2);
+
+        final double finalYPosition = Math.max(0, Math.min(yClick, imageView.getImage().getHeight()));
+
+        line.startYProperty().bind(Bindings.createDoubleBinding(() -> {
+            double minY = imageView.getBoundsInParent().getMinY();
+            return minY + finalYPosition * imageView.getScaleY();
+        }, imageView.boundsInParentProperty(), imageView.scaleYProperty()));
+
+        line.endYProperty().bind(line.startYProperty());
+        line.startXProperty().bind(Bindings.createDoubleBinding(() -> imageView.getBoundsInParent().getMinX(), imageView.boundsInParentProperty()));
+        line.endXProperty().bind(Bindings.createDoubleBinding(() -> imageView.getBoundsInParent().getMaxX(), imageView.boundsInParentProperty()));
+
+        if (!parentPane.getChildren().contains(line)) {
+            parentPane.getChildren().add(line);
+        }
+    }
+
+    private void updateLines(MouseEvent event, ImageView imageView) {
+        double currentY = event.getY();
+
+        // Линия, следующая за курсором
+        line1.startYProperty().unbind();
+        line1.endYProperty().unbind();
+        line1.setStartY(currentY);
+        line1.setEndY(currentY);
+
+        // Линия, движущаяся в противоположную сторону
+        double oppositeY = 2 * initialY - currentY;
+        line2.startYProperty().unbind();
+        line2.endYProperty().unbind();
+        line2.setStartY(oppositeY);
+        line2.setEndY(oppositeY);
+
+        // Обновляем биндинги, чтобы линии корректно масштабировались
+        addHorizontalLine(line1.getStartY(), imageView, (Pane) imageView.getParent(), line1);
+        addHorizontalLine(line2.getStartY(), imageView, (Pane) imageView.getParent(), line2);
     }
 }

@@ -24,7 +24,7 @@
             <Separator /> <!-- Разделитель после импорта данных -->
 
             <!-- Обработка изображений -->
-            <Button maxWidth="Infinity" onAction="#handleImageSmoothing" styleClass="menu-button" text="Сгладить изображения" />
+            <Button maxWidth="Infinity" onAction="#processImage" styleClass="menu-button" text="Обработать изображение" />
             <Button maxWidth="Infinity" onAction="#spectraVisualization" styleClass="menu-button" text="Визуализация спектров" />
             <Button fx:id="spectrumCalibration" maxWidth="Infinity" onAction="#spectrumCalibration" styleClass="menu-button" text="Калибровка" />
             <Separator /> <!-- Разделитель после обработки изображений -->

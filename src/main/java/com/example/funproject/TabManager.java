@@ -357,9 +357,18 @@ public class TabManager {
      * @param controller Контроллер приложения
      */
     private void handleSeriesManagementButtonClick(HelloController controller) {
-        LineChart<Number, Number> currentChart = getCurrentChart(controller);
+        Tab currentOuterTab = controller.tabPane.getSelectionModel().getSelectedItem();
+        TabPane currentInnerTabPane = innerTableAndChartTabPanes.get(currentOuterTab);
+        Tab currentInnerTab = currentInnerTabPane.getSelectionModel().getSelectedItem();
+
+        LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
         TableView<SpectralDataTable.SpectralData> tableViewToUpdate = getCurrentTableView(controller);
-        SeriesManagementWindow seriesManagementWindow = new SeriesManagementWindow(currentChart, tableViewToUpdate, newTab);
+
+        SeriesManagementWindow seriesManagementWindow = new SeriesManagementWindow(currentChart,
+                tableViewToUpdate,
+                currentOuterTab,
+                currentInnerTab,
+                controller);
         seriesManagementWindow.show();
     }
 

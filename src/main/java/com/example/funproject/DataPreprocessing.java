@@ -62,38 +62,6 @@ public class DataPreprocessing {
         return new Color(red / count, green / count, blue / count, opacity / count);
     }
 
-    public WritableImage applyDensity(Image originalImage) {
-        int width = (int) originalImage.getWidth();
-        int height = (int) originalImage.getHeight();
-        WritableImage densityImage = new WritableImage(width, height);
-        PixelReader pixelReader = originalImage.getPixelReader();
-        PixelWriter pixelWriter = densityImage.getPixelWriter();
 
-        double D = 2000;
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color originalColor = pixelReader.getColor(x, y);
-
-                // Вычисление среднего значения по каналам RGB для оригинального цвета
-                double originalAverage = (originalColor.getRed() + originalColor.getGreen() + originalColor.getBlue()) / 3;
-                int originalGrayValue = (int) (originalAverage * 255);
-
-                // Применение формулы денситометрии
-                double I = -D * Math.log10(1 - (originalAverage / D));
-
-                // Нормализация значения интенсивности для нового изображения
-                int processedGrayValue = (int) (I * 255 / (D * Math.log10(D / (D - 1))));
-                processedGrayValue = Math.min(Math.max(processedGrayValue, 0), 255);
-
-                Color newColor = Color.rgb(processedGrayValue, processedGrayValue, processedGrayValue);
-                pixelWriter.setColor(x, y, newColor);
-
-                // Вывод в консоль оригинального и обработанного серых значений
-                System.out.println("Original Gray: " + originalGrayValue + ", Processed Gray: " + processedGrayValue);
-            }
-        }
-        return densityImage;
-    }
 
 }

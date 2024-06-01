@@ -4,6 +4,7 @@ import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -12,12 +13,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.stage.Stage;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -37,6 +37,7 @@ public class ImageControlPanel extends HBox {
     private final TextField elementInput;
     private final Button pickPeaksButton;
     private final Button resetButton;
+    private final Button clearImageButton; // Новая кнопка
     private final TextField angleInput;
     private boolean peakSelectionMode = false;
 
@@ -50,6 +51,7 @@ public class ImageControlPanel extends HBox {
         elementInput = new TextField();
         pickPeaksButton = new Button("Отметить Пики");
         resetButton = new Button("Восстановить Изображение");
+        clearImageButton = new Button("Очистить изображение"); // Новая кнопка
         angleInput = new TextField();
 
         lineTypeComboBox.getItems().addAll("X1", "X2");
@@ -61,9 +63,11 @@ public class ImageControlPanel extends HBox {
         elementInput.getStyleClass().add("text-field-element");
         pickPeaksButton.getStyleClass().add("button-pick-peaks");
         resetButton.getStyleClass().add("button-reset");
+        clearImageButton.getStyleClass().add("button-clear-image"); // Стиль для новой кнопки
         angleInput.getStyleClass().add("text-field-angle");
 
         resetButton.setOnAction(event -> handleResetButtonClick(mainImageView));
+        clearImageButton.setOnAction(event -> handleClearImageButtonClick(mainImageView)); // Обработчик для новой кнопки
         pickPeaksButton.setOnAction(event -> togglePeakSelectionModeAndHandleClicks());
 
         lineTypeComboBox.setOnAction(event -> loadAngleFromNotebook());
@@ -71,13 +75,29 @@ public class ImageControlPanel extends HBox {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        getChildren().addAll(pickPeaksButton, elementInput, lineTypeComboBox, angleInput, spacer, resetButton);
+        getChildren().addAll(pickPeaksButton, elementInput, lineTypeComboBox, angleInput, spacer, resetButton, clearImageButton); // Добавление новой кнопки
 
         setSpacing(10);
         setAlignment(Pos.CENTER_LEFT);
         setPadding(new Insets(3, 10, 3, 10));
 
         elementInput.textProperty().addListener((observable, oldValue, newValue) -> loadAngleFromNotebook());
+    }
+
+    private void handleClearImageButtonClick(ImageView imageView) {
+        Image selectedImage = imageProcessor.selectedImage;
+        if (imageView != null && selectedImage != null) {
+            Pane imageContainer = (Pane) imageView.getParent();
+            List<LineInfo> linesToRemove = imageLines.get(selectedImage);
+            if (linesToRemove != null) {
+                linesToRemove.forEach(lineInfo -> {
+                    if (lineInfo.getLine() != null) {
+                        imageContainer.getChildren().remove(lineInfo.getLine());
+                    }
+                });
+                linesToRemove.clear();
+            }
+        }
     }
 
     private void loadAngleFromNotebook() {
@@ -120,33 +140,29 @@ public class ImageControlPanel extends HBox {
         ImageView imageView = imageProcessor.imageView;
 
         if (peakSelectionMode) {
-            setupPeakSelectionMode(lineChart, imageView);
+            if (lineChart != null) {
+                lineChart.setCursor(Cursor.CROSSHAIR);
+                lineChart.setOnMouseClicked(event -> handleLineChartClick(event, lineChart));
+            }
+
+            if (imageView != null) {
+                imageView.setCursor(Cursor.CROSSHAIR);
+                imageView.setOnMouseClicked(event -> {
+                    if (event.getButton() == MouseButton.PRIMARY) {
+                        addPeakLine(event.getX(), imageView);
+                    }
+                });
+            }
         } else {
-            disablePeakSelectionMode(lineChart, imageView);
-        }
-    }
+            if (lineChart != null) {
+                lineChart.setCursor(Cursor.DEFAULT);
+                lineChart.setOnMouseClicked(null);
+            }
 
-    private void setupPeakSelectionMode(LineChart<Number, Number> lineChart, ImageView imageView) {
-        if (lineChart != null) {
-            lineChart.setCursor(Cursor.CROSSHAIR);
-            lineChart.setOnMouseClicked(event -> handleLineChartClick(event, lineChart));
-        }
-
-        if (imageView != null) {
-            imageView.setCursor(Cursor.CROSSHAIR);
-            imageView.setOnMouseClicked(event -> handleImageViewClick(event, imageView));
-        }
-    }
-
-    private void disablePeakSelectionMode(LineChart<Number, Number> lineChart, ImageView imageView) {
-        if (lineChart != null) {
-            lineChart.setCursor(Cursor.DEFAULT);
-            lineChart.setOnMouseClicked(null);
-        }
-
-        if (imageView != null) {
-            imageView.setCursor(Cursor.DEFAULT);
-            imageView.setOnMouseClicked(null);
+            if (imageView != null) {
+                imageView.setCursor(Cursor.DEFAULT);
+                imageView.setOnMouseClicked(null);
+            }
         }
     }
 
@@ -188,15 +204,18 @@ public class ImageControlPanel extends HBox {
 
                 setupLineDragHandlers(verticalLineSeries, lineInfo, lineChart);
                 saveAngleToNotebook(lineTypeComboBox.getValue(), angleInput.getText());
+
+                // Открытие нового окна с частью графика
+                double zoomRange = 10; // Устанавливаем диапазон увеличения
+                new PeakChartWindow(lineChart.getData(), xValue.doubleValue(), zoomRange, lineChart, verticalLineSeries).show();
             }
         }
     }
 
-    private void handleImageViewClick(MouseEvent event, ImageView imageView) {
-        if (event.getButton() == MouseButton.PRIMARY) {
-            addPeakLine(event.getX(), imageView);
-        }
-    }
+
+
+
+
 
     private void addPeakLine(double xClick, ImageView imageView) {
         Line peakLine = new Line();
@@ -371,5 +390,124 @@ public class ImageControlPanel extends HBox {
 
     private static class Delta {
         double x, y;
+    }
+}
+
+
+
+class PeakChartWindow extends Stage {
+    private double zoomFactor = 1.1; // Фактор масштабирования
+    private XYChart.Series<Number, Number> verticalLineSeries;
+    private LineChart<Number, Number> originalLineChart;
+    private XYChart.Series<Number, Number> originalVerticalLineSeries;
+
+    public PeakChartWindow(List<XYChart.Series<Number, Number>> allSeries, double xValue, double zoomRange,
+                           LineChart<Number, Number> originalLineChart, XYChart.Series<Number, Number> originalVerticalLineSeries) {
+        setTitle("Peak Chart");
+
+        this.originalLineChart = originalLineChart;
+        this.originalVerticalLineSeries = originalVerticalLineSeries;
+
+        NumberAxis xAxis = new NumberAxis();
+        NumberAxis yAxis = new NumberAxis();
+
+        LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
+        lineChart.setAnimated(false);
+
+        // Добавляем все серии данных
+        allSeries.forEach(series -> {
+            XYChart.Series<Number, Number> newSeries = new XYChart.Series<>();
+            newSeries.setName(series.getName());
+            series.getData().forEach(data -> newSeries.getData().add(new XYChart.Data<>(data.getXValue(), data.getYValue())));
+            lineChart.getData().add(newSeries);
+
+            newSeries.getNode().lookup(".chart-series-line").setStyle("-fx-stroke-width: 2px;"); // Устанавливаем стиль для линии
+            newSeries.getData().forEach(data -> {
+                if (data.getNode() != null) data.getNode().setVisible(false); // Скрываем точки данных
+            });
+        });
+
+        // Настройка осей для увеличения нужной части графика
+        xAxis.setLowerBound(xValue - zoomRange);
+        xAxis.setUpperBound(xValue + zoomRange);
+        xAxis.setAutoRanging(false);
+        yAxis.setAutoRanging(true);
+
+        VBox layout = new VBox(lineChart);
+        Scene scene = new Scene(layout, 800, 600);
+        setScene(scene);
+
+        // Инициализация verticalLineSeries
+        verticalLineSeries = lineChart.getData().stream()
+                .filter(series -> "Вертикальная линия".equals(series.getName()) && series.getData().get(0).getXValue().doubleValue() == xValue)
+                .findFirst()
+                .orElse(null);
+
+        // Обработчик событий для масштабирования колесиком мыши
+        lineChart.setOnScroll(event -> {
+            if (event.getDeltaY() != 0) {
+                zoom(event, xAxis, yAxis);
+            }
+        });
+
+        // Обработчики для перетаскивания вертикальной линии
+        if (verticalLineSeries != null) {
+            setupLineDragHandlers(verticalLineSeries, originalVerticalLineSeries, xAxis, originalLineChart);
+        }
+    }
+
+    private void zoom(ScrollEvent event, NumberAxis xAxis, NumberAxis yAxis) {
+        double direction = event.getDeltaY() > 0 ? zoomFactor : 1 / zoomFactor;
+
+        double xZoomCenter = xAxis.getValueForDisplay(event.getX()).doubleValue();
+        double xLowerBound = xAxis.getLowerBound();
+        double xUpperBound = xAxis.getUpperBound();
+        double xRange = (xUpperBound - xLowerBound) * direction;
+
+        double newLowerBound = xZoomCenter - ((xZoomCenter - xLowerBound) * direction);
+        double newUpperBound = xZoomCenter + ((xUpperBound - xZoomCenter) * direction);
+
+        xAxis.setLowerBound(newLowerBound);
+        xAxis.setUpperBound(newUpperBound);
+    }
+
+    private void setupLineDragHandlers(XYChart.Series<Number, Number> verticalLineSeries,
+                                       XYChart.Series<Number, Number> originalVerticalLineSeries,
+                                       NumberAxis xAxis, LineChart<Number, Number> originalLineChart) {
+        verticalLineSeries.getNode().setOnMousePressed(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                event.consume();
+            }
+        });
+
+        verticalLineSeries.getNode().setOnMouseDragged(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                double newX = event.getX();
+                Number xValue = xAxis.getValueForDisplay(newX);
+
+                if (xValue != null) {
+                    verticalLineSeries.getData().get(0).setXValue(xValue);
+                    verticalLineSeries.getData().get(1).setXValue(xValue);
+
+                    // Обновляем положение линии в оригинальном графике
+                    updateOriginalVerticalLinePosition(originalVerticalLineSeries, xValue.doubleValue());
+                }
+                event.consume();
+            }
+        });
+
+        verticalLineSeries.getNode().setOnMouseReleased(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                event.consume();
+            }
+        });
+    }
+
+    private void updateOriginalVerticalLinePosition(XYChart.Series<Number, Number> originalVerticalLineSeries, double newXValue) {
+        NumberAxis yAxis = (NumberAxis) originalLineChart.getYAxis();
+        originalVerticalLineSeries.getData().get(0).setXValue(newXValue);
+        originalVerticalLineSeries.getData().get(1).setXValue(newXValue);
+        originalVerticalLineSeries.getData().get(0).setYValue(yAxis.getLowerBound());
+        originalVerticalLineSeries.getData().get(1).setYValue(yAxis.getUpperBound());
     }
 }
