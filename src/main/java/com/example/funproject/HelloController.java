@@ -150,12 +150,7 @@ public class HelloController {
      *
      * @param actionEvent Событие, вызвавшее метод.
      */
-    /**
-     * Отображает контекстное меню для выбора способа визуализации спектра.
-     * Позволяет построить график по изображению или по таблице.
-     *
-     * @param actionEvent Событие, вызвавшее метод.
-     */
+
     @FXML
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
@@ -170,17 +165,9 @@ public class HelloController {
         // Пункт меню для построения графика по изображению
         MenuItem imageBasedItem = new MenuItem("Построить график по изображению");
         imageBasedItem.setOnAction(e -> {
-            XYChart.Series<Number, Number> series = spectralDataVisualization.updateChartWithSplineData(currentTab, selectedImage, currentInnerTabPane);
-            if (series == null) {
-                System.out.println("Не удалось получить данные спектра.");
-                return;
-            }
-            // Обновляем таблицу спектральных данных
-            SpectralDataTable.updateTableViewInTab(currentTab, new ArrayList<>(series.getData()), spectralDataTableViews.get(currentTab));
-
             // Получаем ImageView и устанавливаем курсор и линии
             ImageView imageView = imageProcessors.get(currentTab).imageView;
-            spectralDataVisualization.setImageViewCursorAndLines(imageView);
+            spectralDataVisualization.setImageViewCursorAndLines(imageView, currentTab, currentInnerTabPane);
         });
 
         // Пункт меню для построения графика по таблице
@@ -203,6 +190,7 @@ public class HelloController {
         // Отображение контекстного меню
         visualizationMenu.show((Node) actionEvent.getSource(), Side.BOTTOM, 0, 0);
     }
+
 
     /**
      * Калибровка спектрометра.

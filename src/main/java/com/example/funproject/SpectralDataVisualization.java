@@ -2,8 +2,12 @@ package com.example.funproject;
 
 import javafx.beans.binding.Bindings;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -14,7 +18,6 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.collections.FXCollections;
-import javafx.scene.image.Image;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,12 +25,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class SpectralDataVisualization {
 
     private Line line1 = new Line();
     private Line line2 = new Line();
     private double initialY; // Исходная координата Y клика
+    private Image selectedImage;
 
     public SpectralDataVisualization() {
         // Пустой конструктор
@@ -127,9 +132,16 @@ public class SpectralDataVisualization {
         }
     }
 
+    /**
+     * Визуализирует данные из таблицы на графике.
+     *
+     * @param currentTab   текущая вкладка
+     * @param currentChart график для обновления
+     * @param tableView    таблица с данными
+     */
     public void visualizeFromTable(Tab currentTab, LineChart<Number, Number> currentChart, TableView<SpectralDataTable.SpectralData> tableView) {
         // Очищаем текущий график
-        // currentChart.getData().clear();
+        currentChart.getData().clear();
 
         // Создаем новую серию данных
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
@@ -150,8 +162,10 @@ public class SpectralDataVisualization {
      * Устанавливает курсор для ImageView и добавляет линии, следующие за курсором.
      *
      * @param imageView ImageView для установки курсора
+     * @param currentTab текущая вкладка
+     * @param innerTabPane внутренний TabPane
      */
-    public void setImageViewCursorAndLines(ImageView imageView) {
+    public void setImageViewCursorAndLines(ImageView imageView, Tab currentTab, TabPane innerTabPane) {
         imageView.setOnMouseEntered(event -> imageView.setCursor(Cursor.CROSSHAIR));
         imageView.setOnMouseExited(event -> imageView.setCursor(Cursor.DEFAULT));
 
@@ -165,7 +179,15 @@ public class SpectralDataVisualization {
         });
 
         imageView.setOnMouseDragged(event -> updateLines(event, imageView));
-        imageView.setOnMouseReleased(event -> updateLines(event, imageView));
+
+        imageView.setOnMouseReleased(event -> {
+            Pane parentPane = (Pane) imageView.getParent();
+            selectedImage = getSelectedRegionImage(imageView);
+            if (selectedImage != null) {
+                updateChartWithSplineData(currentTab, selectedImage, innerTabPane);
+            }
+            removeLines(parentPane);
+        });
     }
 
     private void addHorizontalLine(double yClick, ImageView imageView, Pane parentPane, Line line) {
@@ -207,5 +229,66 @@ public class SpectralDataVisualization {
         // Обновляем биндинги, чтобы линии корректно масштабировались
         addHorizontalLine(line1.getStartY(), imageView, (Pane) imageView.getParent(), line1);
         addHorizontalLine(line2.getStartY(), imageView, (Pane) imageView.getParent(), line2);
+    }
+
+    private void removeLines(Pane parentPane) {
+        parentPane.getChildren().remove(line1);
+        parentPane.getChildren().remove(line2);
+    }
+
+    private Image getSelectedRegionImage(ImageView imageView) {
+        double y1 = line1.getStartY();
+        double y2 = line2.getStartY();
+        double minY = Math.min(y1, y2);
+        double maxY = Math.max(y1, y2);
+
+        Image image = imageView.getImage();
+        if (image != null && image.getPixelReader() != null) {
+            PixelReader pixelReader = image.getPixelReader();
+            int width = (int) image.getWidth();
+            int height = (int) image.getHeight();
+            double scaleY = imageView.getBoundsInParent().getHeight() / height;
+
+            int startY = (int) (minY / scaleY);
+            int endY = (int) (maxY / scaleY);
+
+            if (startY < 0) startY = 0;
+            if (endY > height) endY = height;
+
+            WritableImage selectedImage = new WritableImage(width, endY - startY);
+            for (int x = 0; x < width; x++) {
+                for (int y = startY; y < endY; y++) {
+                    selectedImage.getPixelWriter().setColor(x, y - startY, pixelReader.getColor(x, y));
+                }
+            }
+            return selectedImage;
+        }
+        return null;
+    }
+
+    private LineChart<Number, Number> findLineChart(Node node) {
+        Parent parent = node.getParent();
+        while (parent != null) {
+            if (parent instanceof TabPane) {
+                TabPane tabPane = (TabPane) parent;
+                Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+                if (selectedTab.getContent() instanceof LineChart) {
+                    return (LineChart<Number, Number>) selectedTab.getContent();
+                }
+            }
+            parent = parent.getParent();
+        }
+        return null;
+    }
+
+    private TabPane findTabPane(Node node) {
+        Parent parent = node.getParent();
+        while (parent != null) {
+            if (parent instanceof TabPane) {
+                return (TabPane) parent;
+            }
+            parent = parent.getParent();
+        }
+        return null;
     }
 }
