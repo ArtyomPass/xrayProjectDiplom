@@ -177,3 +177,69 @@
 .remove-button:hover {
     -fx-background-color: #e53935; /* Darker red on hover */
 }
+
+/* styles.css */
+
+.button-pick-peaks {
+    -fx-background-color: #f0f0f0; /* Светло-серый фон */
+    -fx-text-fill: #333333; /* Темно-серый текст */
+    -fx-font-size: 12px; /* Уменьшенный шрифт */
+    -fx-padding: 4px 8px; /* Уменьшенные внутренние отступы */
+    -fx-background-radius: 3px; /* Уменьшенный радиус скругления */
+    -fx-border-color: #cccccc; /* Светло-серая граница */
+}
+
+.button-pick-peaks:hover {
+    -fx-background-color: #e0e0e0; /* Более темный светло-серый при наведении */
+}
+
+.button-pick-peaks:pressed {
+    -fx-background-color: #d0d0d0; /* Еще более темный светло-серый при нажатии */
+}
+
+.button-reset {
+    -fx-background-color: #f0f0f0; /* Светло-серый фон */
+    -fx-text-fill: #333333; /* Темно-серый текст */
+    -fx-font-size: 12px; /* Уменьшенный шрифт */
+    -fx-padding: 4px 8px; /* Уменьшенные внутренние отступы */
+    -fx-background-radius: 3px; /* Уменьшенный радиус скругления */
+    -fx-border-color: #cccccc; /* Светло-серая граница */
+}
+
+.button-reset:hover {
+    -fx-background-color: #e0e0e0; /* Более темный светло-серый при наведении */
+}
+
+.button-reset:pressed {
+    -fx-background-color: #d0d0d0; /* Еще более темный светло-серый при нажатии */
+}
+
+.text-field-element {
+    -fx-background-color: #ffffff; /* Белый фон */
+    -fx-text-fill: #333333; /* Темно-серый текст */
+    -fx-font-size: 12px; /* Уменьшенный шрифт */
+    -fx-padding: 4px; /* Уменьшенные внутренние отступы */
+    -fx-background-radius: 3px; /* Уменьшенный радиус скругления */
+    -fx-border-color: #cccccc; /* Светло-серая граница */
+    -fx-border-radius: 3px;
+}
+
+.text-field-angle {
+    -fx-background-color: #ffffff; /* Белый фон */
+    -fx-text-fill: #333333; /* Темно-серый текст */
+    -fx-font-size: 12px; /* Уменьшенный шрифт */
+    -fx-padding: 4px; /* Уменьшенные внутренние отступы */
+    -fx-background-radius: 3px; /* Уменьшенный радиус скругления */
+    -fx-border-color: #cccccc; /* Светло-серая граница */
+    -fx-border-radius: 3px;
+}
+
+.combo-box-line-type {
+    -fx-background-color: #ffffff; /* Белый фон */
+    -fx-text-fill: #333333; /* Темно-серый текст */
+    -fx-font-size: 12px; /* Уменьшенный шрифт */
+    -fx-padding: 4px; /* Уменьшенные внутренние отступы */
+    -fx-background-radius: 3px; /* Уменьшенный радиус скругления */
+    -fx-border-color: #cccccc; /* Светло-серая граница */
+    -fx-border-radius: 3px;
+}

@@ -116,13 +116,12 @@ public class InterpolateWindow extends Stage {
                 XYChart.Series<Number, Number> interpolatedSeries = new XYChart.Series<>();
                 for (int i = 0; i < newXValues.size(); i++) {
                     double x = newXValues.get(i);
-                    // Найти три ближайшие точки из последней серии
+                    // Найти две ближайшие точки из последней серии
                     int index1 = findClosestIndex(lastSeries.getData(), x);
                     int index2 = index1 + 1;
-                    int index3 = index2 + 1;
 
                     // Проверка границ
-                    if (index3 >= lastSeries.getData().size()) {
+                    if (index2 >= lastSeries.getData().size()) {
                         break; // Недостаточно точек для интерполяции
                     }
 
@@ -131,11 +130,9 @@ public class InterpolateWindow extends Stage {
                     double y1 = lastSeries.getData().get(index1).getYValue().doubleValue();
                     double x2 = lastSeries.getData().get(index2).getXValue().doubleValue();
                     double y2 = lastSeries.getData().get(index2).getYValue().doubleValue();
-                    double x3 = lastSeries.getData().get(index3).getXValue().doubleValue();
-                    double y3 = lastSeries.getData().get(index3).getYValue().doubleValue();
 
-                    // Интерполяция по трём точкам (например, кубический сплайн)
-                    double y = interpolate(x, x1, y1, x2, y2, x3, y3);
+                    // Интерполяция по двум точкам (например, линейная)
+                    double y = interpolate(x, x1, y1, x2, y2);
 
                     // Добавить интерполированную точку в новую серию
                     interpolatedSeries.getData().add(new XYChart.Data<>(x, y));
@@ -170,15 +167,9 @@ public class InterpolateWindow extends Stage {
         return closestIndex;
     }
 
-    private static double interpolate(double x, double x1, double y1, double x2, double y2, double x3, double y3) {
-        // Проверка на совпадение с x1 или x3
-        if (x == x1) return y1;
-        if (x == x3) return y3;
-
-        // Интерполяция по трём точкам с использованием формулы Лагранжа
-        double L1 = ((x - x2) * (x - x3)) / ((x1 - x2) * (x1 - x3));
-        double L2 = ((x - x1) * (x - x3)) / ((x2 - x1) * (x2 - x3));
-        double L3 = ((x - x1) * (x - x2)) / ((x3 - x1) * (x3 - x2));
-        return L1 * y1 + L2 * y2 + L3 * y3;
+    private static double interpolate(double x, double x1, double y1, double x2, double y2) {
+        // Интерполяция по двум точкам (линейная интерполяция)
+        double t = (x - x1) / (x2 - x1);
+        return y1 * (1 - t) + y2 * t;
     }
 }

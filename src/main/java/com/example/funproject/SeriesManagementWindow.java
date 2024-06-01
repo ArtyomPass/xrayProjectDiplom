@@ -298,7 +298,9 @@ public class SeriesManagementWindow extends Stage {
             resetAllSeriesStyles();
 
             // Установка стиля для выбранной серии на жирный
-            setSeriesStyle(selectedSeries, true);
+            if (!"Локальные пики".equals(selectedSeries.getName())) {
+                setSeriesStyle(selectedSeries, true);
+            }
 
             // Обновление таблицы
             SpectralDataTable.updateTableViewInTab(currentTab, selectedSeries.getData(), tableViewToUpdate);
@@ -313,8 +315,10 @@ public class SeriesManagementWindow extends Stage {
      */
     private void resetAllSeriesStyles() {
         lineChart.getData().forEach(series -> {
-            setSeriesStyle(series, false);
-            updateSeriesColor(series, colorPickersMap.get(series).getValue());
+            if (!"Локальные пики".equals(series.getName())) {
+                setSeriesStyle(series, false);
+                updateSeriesColor(series, colorPickersMap.get(series).getValue());
+            }
         });
     }
 
@@ -377,9 +381,11 @@ public class SeriesManagementWindow extends Stage {
      */
     private void updateSeriesColor(XYChart.Series<Number, Number> series, Color newColor) {
         colorPickersMap.get(series).setValue(newColor);
-        Node seriesNode = series.getNode();
-        if (seriesNode != null) {
-            seriesNode.setStyle("-fx-stroke: " + toRgbString(newColor) + ";");
+        if (!"Локальные пики".equals(series.getName())) {
+            Node seriesNode = series.getNode();
+            if (seriesNode != null) {
+                seriesNode.setStyle("-fx-stroke: " + toRgbString(newColor) + ";");
+            }
         }
     }
 
@@ -400,6 +406,9 @@ public class SeriesManagementWindow extends Stage {
      * @param bold   true для жирного стиля, false для обычного
      */
     private void setSeriesStyle(XYChart.Series<Number, Number> series, boolean bold) {
+        if ("Локальные пики".equals(series.getName())) {
+            return; // Не изменять стиль для серии "Локальные пики"
+        }
         Node seriesLine = series.getNode();
         if (seriesLine != null) {
             Color color = colorPickersMap.get(series).getValue();
@@ -415,11 +424,13 @@ public class SeriesManagementWindow extends Stage {
      */
     private void thickenLinesOnClose() {
         lineChart.getData().forEach(series -> {
-            Node seriesLine = series.getNode().lookup(".chart-series-line");
-            if (seriesLine instanceof Shape) {
-                Shape line = (Shape) seriesLine;
-                Color color = colorPickersMap.get(series).getValue();
-                line.setStyle("-fx-stroke: " + toRgbString(color) + "; -fx-stroke-width: 3;");
+            if (!"Локальные пики".equals(series.getName())) {
+                Node seriesLine = series.getNode().lookup(".chart-series-line");
+                if (seriesLine instanceof Shape) {
+                    Shape line = (Shape) seriesLine;
+                    Color color = colorPickersMap.get(series).getValue();
+                    line.setStyle("-fx-stroke: " + toRgbString(color) + "; -fx-stroke-width: 3;");
+                }
             }
         });
     }

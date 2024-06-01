@@ -7,25 +7,24 @@ public class LineInfo {
 
     private Line line;
     private double xPosition; // Координата X линии
-    private String peakType; // Тип пика, например, "K-Alpha 1" or "K-Beta 2";
+    private String standardType; // Используем стандартType вместо peakType
     private String elementName;
-    private XYChart.Series<Number, Number> series;  // Поле для хранения серии данных
+    private double angle; // Угол
 
     public LineInfo(XYChart.Series<Number, Number> series,
                     Line line,
                     double xPosition,
-                    String peakType,
-                    String elementName) {
-
-        this.series = series;  // Инициализация серии данных
+                    String standardType,
+                    String elementName,
+                    double angle) {
         this.line = line;
         this.xPosition = xPosition;
-        this.peakType = peakType;
+        this.standardType = standardType; // Инициализация стандартType
         this.elementName = elementName;
+        this.angle = angle; // Инициализация угла
     }
 
     // Геттеры и сеттеры
-
 
     public Line getLine() {
         return line;
@@ -43,12 +42,12 @@ public class LineInfo {
         this.xPosition = xPosition;
     }
 
-    public String getPeakType() {
-        return peakType;
+    public String getStandardType() {
+        return standardType;
     }
 
-    public void setPeakType(String peakType) {
-        this.peakType = peakType;
+    public void setStandardType(String standardType) {
+        this.standardType = standardType;
     }
 
     public String getElementName() {
@@ -57,5 +56,24 @@ public class LineInfo {
 
     public void setElementName(String elementName) {
         this.elementName = elementName;
+    }
+
+    public double getAngle() {
+        return angle;
+    }
+
+    public void setAngle(double angle) {
+        this.angle = angle;
+    }
+
+    @Override
+    public String toString() {
+        return "LineInfo{" +
+                "line=" + line +
+                ", xPosition=" + xPosition +
+                ", standardType='" + standardType + '\'' +
+                ", elementName='" + elementName + '\'' +
+                ", angle=" + angle +
+                '}';
     }
 }

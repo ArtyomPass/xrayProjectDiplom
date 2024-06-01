@@ -62,7 +62,7 @@ public class SpectralDataVisualization {
      */
     private XYChart.Series<Number, Number> processImageForSplineData(Image image) {
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Intensities"); // Название серии данных
+        series.setName("Спектр"); // Название серии данных
 
         if (image != null && image.getPixelReader() != null) {
             PixelReader pixelReader = image.getPixelReader();

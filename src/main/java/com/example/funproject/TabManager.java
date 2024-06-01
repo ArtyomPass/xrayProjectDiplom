@@ -23,7 +23,7 @@ public class TabManager {
     private final TabPane tabPane;
     private final Map<Tab, ImageProcessor> imageProcessors;
     private ImageProcessor imageProcessor;
-    private TabPane innerTabPane;
+    private TabPane chartTabPane;
     protected Map<Tab, TabPane> innerTableAndChartTabPanes = new HashMap<>();
     private TableView<SpectralDataTable.SpectralData> spectralDataTableView;
     private Button addChartButton, normalizeButton, interpolateButton, backgroundButton, smoothButton, correctionButton, statisticsButton, seriesManagementButton;
@@ -56,7 +56,7 @@ public class TabManager {
         tabPane.getTabs().add(newTab);
         tabPane.getSelectionModel().select(newTab);
         controller.spectralDataTableViews.put(newTab, spectralDataTableView);
-        innerTableAndChartTabPanes.put(newTab, innerTabPane);
+        innerTableAndChartTabPanes.put(newTab, chartTabPane);
         handleAddButtonClick(controller);
         imageProcessors.put(newTab, imageProcessor);
     }
@@ -68,30 +68,35 @@ public class TabManager {
      * @return SplitPane содержимое вкладки
      */
     private SplitPane createTabContent(HelloController controller) {
+        // Создание кнопок управления
         createControlButtons(controller);
         VBox buttonsVBox = createButtonsVBox();
 
-        innerTabPane = new TabPane();
+        // Создание вкладок графика и таблицы данных спектра
+        chartTabPane = new TabPane();
         spectralDataTableView = new SpectralDataTable().getTableView();
         spectralDataTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        SplitPane tableAndChartsSplitPane = createSplitPane(spectralDataTableView, innerTabPane, 0.2);
+        SplitPane tableAndChartsSplitPane = createSplitPane(spectralDataTableView, chartTabPane, 0.2);
         SplitPane tabsAndButtonsSplitPane = createSplitPane(tableAndChartsSplitPane, buttonsVBox, 0.84);
 
+        // Создание основного изображения и миниатюр
         mainImageView = new ImageView();
         mainImageView.setPreserveRatio(true);
         ScrollPane mainImageScrollPane = createScrollPane(mainImageView, true, true);
         thumbnailsTilePane = createThumbnailsTilePane();
         ScrollPane thumbnailsScrollPane = createScrollPane(thumbnailsTilePane, true, false);
-
         SplitPane imageAndThumbnailsSplitPane = createSplitPane(mainImageScrollPane, thumbnailsScrollPane, 0.8);
-        imageProcessor = new ImageProcessor(controller, mainImageView, thumbnailsTilePane);
-        ImageControlPanel imageControlPanel = new ImageControlPanel(controller, imageProcessor, mainImageView, innerTabPane);
 
+        // Создание панели управления изображением
+        imageProcessor = new ImageProcessor(controller, mainImageView, thumbnailsTilePane);
+        ImageControlPanel imageControlPanel = new ImageControlPanel(controller, imageProcessor, mainImageView, chartTabPane);
+
+        // Размещение элементов в BorderPane
         BorderPane mainImageAndControlsPane = new BorderPane();
         mainImageAndControlsPane.setCenter(imageAndThumbnailsSplitPane);
         mainImageAndControlsPane.setBottom(imageControlPanel);
 
+        // Создание главного SplitPane
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(Orientation.VERTICAL);
         mainSplitPane.getItems().addAll(tabsAndButtonsSplitPane, mainImageAndControlsPane);
@@ -106,7 +111,15 @@ public class TabManager {
      * @return VBox с кнопками управления
      */
     private VBox createButtonsVBox() {
-        VBox buttonsVBox = new VBox(addChartButton, normalizeButton, interpolateButton, backgroundButton, smoothButton, statisticsButton, correctionButton, seriesManagementButton);
+        VBox buttonsVBox = new VBox(addChartButton,
+                normalizeButton,
+                interpolateButton,
+                backgroundButton,
+                smoothButton,
+                statisticsButton,
+                correctionButton,
+                seriesManagementButton);
+
         buttonsVBox.setSpacing(5);
         return buttonsVBox;
     }
@@ -130,9 +143,9 @@ public class TabManager {
     /**
      * Создает ScrollPane с заданным элементом и политиками прокрутки.
      *
-     * @param content       Элемент для отображения в ScrollPane
-     * @param fitToWidth    Политика прокрутки по ширине
-     * @param fitToHeight   Политика прокрутки по высоте
+     * @param content     Элемент для отображения в ScrollPane
+     * @param fitToWidth  Политика прокрутки по ширине
+     * @param fitToHeight Политика прокрутки по высоте
      * @return Созданный ScrollPane
      */
     private ScrollPane createScrollPane(javafx.scene.Node content, boolean fitToWidth, boolean fitToHeight) {
@@ -197,7 +210,7 @@ public class TabManager {
         NumberAxis xAxis = new NumberAxis();
         NumberAxis yAxis = new NumberAxis();
         LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
-        lineChart.setTitle("Новый график");
+        lineChart.setTitle("Спектры");
 
         Tab newInnerTab = new Tab("График", lineChart);
         TabPane innerTabPaneCurrent = innerTableAndChartTabPanes.get(controller.tabPane.getSelectionModel().getSelectedItem());
@@ -207,31 +220,11 @@ public class TabManager {
         TableView<SpectralDataTable.SpectralData> tableViewToUpdate = controller.spectralDataTableViews.get(tabPane.getSelectionModel().getSelectedItem());
         tableViewToUpdate.getItems().clear();
 
-        lineChart.getData().addListener((ListChangeListener<XYChart.Series<Number, Number>>) change -> {
-            while (change.next()) {
-                if (change.wasAdded()) {
-                    for (XYChart.Series<Number, Number> series : change.getAddedSubList()) {
-                        series.getNode().setOnMouseClicked(event -> updateTableViewFromSeries(series, tableViewToUpdate));
-                    }
-                }
-            }
-        });
-
         newInnerTab.setOnSelectionChanged(event -> {
             if (newInnerTab.isSelected()) {
                 updateTableViewFromActiveTab(controller);
             }
         });
-    }
-
-    /**
-     * Обновляет TableView на основе выбранной серии данных.
-     *
-     * @param series           Выбранная серия данных
-     * @param tableViewToUpdate TableView для обновления
-     */
-    private void updateTableViewFromSeries(XYChart.Series<Number, Number> series, TableView<SpectralDataTable.SpectralData> tableViewToUpdate) {
-        SpectralDataTable.updateTableViewInTab(tabPane.getSelectionModel().getSelectedItem(), series.getData(), tableViewToUpdate);
     }
 
     /**
@@ -268,14 +261,19 @@ public class TabManager {
     private XYChart.Series<Number, Number> findNonVerticalLineSeries(LineChart<Number, Number> currentChart) {
         for (int i = currentChart.getData().size() - 1; i >= 0; i--) {
             XYChart.Series<Number, Number> series = currentChart.getData().get(i);
-            if (!"Vertical Line".equals(series.getName())) {
+            if (!"Vertical Line".equals(series.getName()) || !"Локальные пики".equals(series.getName())) {
+                System.out.println(series.getName());
                 return series;
             }
         }
         return null;
     }
 
-    // Обработчики событий для кнопок управления
+    /**
+     * Обработчик нажатия кнопки "Нормировать".
+     *
+     * @param controller Контроллер приложения
+     */
     private void handleNormalizeButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
         TableView<SpectralDataTable.SpectralData> tableViewToUpdate = getCurrentTableView(controller);
@@ -283,25 +281,44 @@ public class TabManager {
         normalizationWindow.show();
     }
 
+    /**
+     * Обработчик нажатия кнопки "Интерполяция".
+     *
+     * @param controller Контроллер приложения
+     */
     private void handleInterpolateButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
         InterpolateWindow interpolateWindow = new InterpolateWindow(controller, currentChart);
         interpolateWindow.show();
     }
 
+    /**
+     * Обработчик нажатия кнопки "Фон".
+     *
+     * @param controller Контроллер приложения
+     */
     private void handleSubtractBackgroundButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
-        BackgroundSubtractionWindow backgroundWindow = new BackgroundSubtractionWindow(currentChart);;
+        BackgroundSubtractionWindow backgroundWindow = new BackgroundSubtractionWindow(currentChart);
         backgroundWindow.show();
     }
 
+    /**
+     * Обработчик нажатия кнопки "Сглаживание".
+     *
+     * @param controller Контроллер приложения
+     */
     private void handleSmoothButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
         SmoothWindow smoothWindow = new SmoothWindow(controller, currentChart);
         smoothWindow.show();
     }
 
-
+    /**
+     * Обработчик нажатия кнопки "Обрезать график".
+     *
+     * @param controller Контроллер приложения
+     */
     private void handleCorrectionButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
 
@@ -323,13 +340,22 @@ public class TabManager {
         }
     }
 
-
+    /**
+     * Обработчик нажатия кнопки "Статистика".
+     *
+     * @param controller Контроллер приложения
+     */
     private void handleStatisticsButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
         StatisticsWindow statisticsWindow = new StatisticsWindow(controller, currentChart);
         statisticsWindow.show();
     }
 
+    /**
+     * Обработчик нажатия кнопки "Управление сериями".
+     *
+     * @param controller Контроллер приложения
+     */
     private void handleSeriesManagementButtonClick(HelloController controller) {
         LineChart<Number, Number> currentChart = getCurrentChart(controller);
         TableView<SpectralDataTable.SpectralData> tableViewToUpdate = getCurrentTableView(controller);

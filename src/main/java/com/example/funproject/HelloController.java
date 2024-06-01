@@ -100,7 +100,9 @@ public class HelloController {
      */
     public void handleImageSmoothing(ActionEvent event) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+
         Image selectedImage = imageProcessors.get(currentTab).selectedImage;
+
         if (selectedImage == null) {
             System.out.println("Изображение не выбрано.");
             return;

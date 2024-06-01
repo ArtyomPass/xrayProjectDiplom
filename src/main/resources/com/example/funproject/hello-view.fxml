@@ -1,39 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.chart.LineChart?>
-<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="mainContainer" xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.funproject.HelloController" stylesheets="@style.css">
+<BorderPane fx:id="mainContainer" prefHeight="561.0" prefWidth="948.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.funproject.HelloController">
 
     <!-- Sidebar Menu on the left side -->
     <left>
-        <VBox fx:id="sidebar" spacing="10" styleClass="sidebar" prefWidth="190">
+        <VBox fx:id="sidebar" prefWidth="190" spacing="10" styleClass="sidebar">
+         <Separator />
 
             <!-- Основные функции -->
-            <Button text="Новая вкладка" styleClass="menu-button" maxWidth="Infinity" onAction="#handleNewTab"/>
+            <Button maxWidth="Infinity" onAction="#handleNewTab" styleClass="menu-button" text="Новая вкладка" textFill="WHITE" />
             <Separator /> <!-- Разделитель после основных функций -->
             <!-- Импорт данных -->
-            <Button text="Импорт изображения" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImportXRayImage"/>
-            <Button text="Импорт таблицы" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImportTable"/>
+            <Button maxWidth="Infinity" onAction="#handleImportXRayImage" styleClass="menu-button" text="Импорт изображения" />
+            <Button maxWidth="Infinity" onAction="#handleImportTable" styleClass="menu-button" text="Импорт таблицы" />
             <Separator /> <!-- Разделитель после импорта данных -->
 
             <!-- Обработка изображений -->
-            <Button text="Сгладить изображения" styleClass="menu-button" maxWidth="Infinity" onAction="#handleImageSmoothing"/>
-            <Button text="Визуализация спектров" styleClass="menu-button" maxWidth="Infinity" onAction="#spectraVisualization"/>
-            <Button fx:id="spectrumCalibration" text="Калибровка" styleClass="menu-button" maxWidth="Infinity" onAction="#spectrumCalibration"/>
+            <Button maxWidth="Infinity" onAction="#handleImageSmoothing" styleClass="menu-button" text="Сгладить изображения" />
+            <Button maxWidth="Infinity" onAction="#spectraVisualization" styleClass="menu-button" text="Визуализация спектров" />
+            <Button fx:id="spectrumCalibration" maxWidth="Infinity" onAction="#spectrumCalibration" styleClass="menu-button" text="Калибровка" />
             <Separator /> <!-- Разделитель после обработки изображений -->
 
             <!-- Сохранение и экспорт -->
-            <Button text="Сохранить" styleClass="menu-button" maxWidth="Infinity"  onAction="#exportTables"/>
-            <Separator /> <!-- Разделитель после сохранения -->
-
-            <!-- Дополнительные функции -->
-            <Button text="Настройки пользователя" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button text="Помощь/Документация" styleClass="menu-button" maxWidth="Infinity"/>
+            <Button maxWidth="Infinity" onAction="#exportTables" styleClass="menu-button" text="Сохранить" />
+            <Separator />
 
         </VBox>
     </left>
@@ -48,7 +46,7 @@
     <!-- Status Bar at the bottom -->
     <bottom>
         <HBox>
-            <Label text="Статус: готов к использованию"/>
+            <Label text="Статус: готов к использованию" />
             <!-- Additional status indicators can be added here -->
         </HBox>
     </bottom>
