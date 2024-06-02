@@ -215,8 +215,6 @@ public class ImageControlPanel extends HBox {
 
 
 
-
-
     private void addPeakLine(double xClick, ImageView imageView) {
         Line peakLine = new Line();
         peakLine.setStroke(Color.BLUE);

@@ -12,6 +12,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
@@ -150,46 +151,39 @@ public class HelloController {
      *
      * @param actionEvent Событие, вызвавшее метод.
      */
-
     @FXML
     public void spectraVisualization(ActionEvent actionEvent) {
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if (currentTab == null) return; // Проверка на null
+        if (currentTab == null) return;
 
         Image selectedImage = imageProcessors.get(currentTab).selectedImage;
         TabPane currentInnerTabPane = tabManager.innerTableAndChartTabPanes.get(currentTab);
 
-        // Создание контекстного меню
         ContextMenu visualizationMenu = new ContextMenu();
 
-        // Пункт меню для построения графика по изображению
-        MenuItem imageBasedItem = new MenuItem("Построить график по изображению");
+        MenuItem imageBasedItem = new MenuItem("Визуализировать по изображению");
         imageBasedItem.setOnAction(e -> {
-            // Получаем ImageView и устанавливаем курсор и линии
             ImageView imageView = imageProcessors.get(currentTab).imageView;
-            spectralDataVisualization.setImageViewCursorAndLines(imageView, currentTab, currentInnerTabPane);
+            if (spectralDataVisualization.isInVisualizationMode) {
+                spectralDataVisualization.exitVisualizationMode((Pane) imageView.getParent());
+            } else {
+                spectralDataVisualization.enterVisualizationMode(imageView, currentTab, currentInnerTabPane);
+            }
         });
 
-        // Пункт меню для построения графика по таблице
-        MenuItem tableBasedItem = new MenuItem("Построить график по таблице");
+        MenuItem tableBasedItem = new MenuItem("Визуализировать по таблице");
         tableBasedItem.setOnAction(e -> {
-            // Получаем текущую внутреннюю вкладку и график
             Tab currentInnerTab = tabManager.innerTableAndChartTabPanes.get(currentTab).getSelectionModel().getSelectedItem();
             LineChart<Number, Number> currentChart = (LineChart<Number, Number>) currentInnerTab.getContent();
 
-            // Получаем данные из таблицы
             TableView<SpectralDataTable.SpectralData> tableView = spectralDataTableViews.get(currentTab);
-
-            // Вызываем новый метод для визуализации
             spectralDataVisualization.visualizeFromTable(currentTab, currentChart, tableView);
         });
 
-        // Добавляем пункты меню в контекстное меню
         visualizationMenu.getItems().addAll(imageBasedItem, tableBasedItem);
-
-        // Отображение контекстного меню
         visualizationMenu.show((Node) actionEvent.getSource(), Side.BOTTOM, 0, 0);
     }
+
 
 
     /**

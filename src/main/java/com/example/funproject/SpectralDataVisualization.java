@@ -1,9 +1,9 @@
 package com.example.funproject;
 
 import javafx.beans.binding.Bindings;
+import javafx.event.EventHandler;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
@@ -25,85 +25,62 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class SpectralDataVisualization {
-
     private Line line1 = new Line();
     private Line line2 = new Line();
-    private double initialY; // Исходная координата Y клика
+    private double initialY;
     private Image selectedImage;
+    public boolean isInVisualizationMode = false;
+
+    private EventHandler<MouseEvent> visualizationMousePressedHandler;
+    private EventHandler<MouseEvent> visualizationMouseDraggedHandler;
+    private EventHandler<MouseEvent> visualizationMouseReleasedHandler;
 
     public SpectralDataVisualization() {
-        // Пустой конструктор
+        // Empty constructor
     }
 
     /**
-     * Обновляет LineChart на основе данных изображения, преобразованных в сплайны.
-     *
-     * @param tab            текущая вкладка
-     * @param image          изображение для обработки
-     * @param innerTabPane   TabPane, содержащий LineChart
-     * @return               серия данных для сплайна или null, если возникла ошибка
+     * Updates the LineChart based on the spline data derived from the image.
      */
     public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab, Image image, TabPane innerTabPane) {
-        if (innerTabPane == null || image == null) {
-            return null; // Ошибка: не найден TabPane или изображение
-        }
+        if (innerTabPane == null || image == null) return null;
 
         Tab currentTab = innerTabPane.getSelectionModel().getSelectedItem();
-        if (currentTab == null || !(currentTab.getContent() instanceof LineChart)) {
-            return null; // Ошибка: не найдена текущая вкладка или она не содержит LineChart
-        }
+        if (currentTab == null || !(currentTab.getContent() instanceof LineChart)) return null;
 
         LineChart<Number, Number> chart = (LineChart<Number, Number>) currentTab.getContent();
 
-        // Обрабатываем изображение и получаем данные для сплайна
-        XYChart.Series<Number, Number> series = processImageForSplineData(image);
-
-        // Добавляем данные в LineChart и настраиваем его внешний вид
-        chart.getData().add(series);
-        chart.setCreateSymbols(false); // Отключаем отображение символов точек данных
-        chart.setLegendVisible(false); // Отключаем отображение легенды
-
-        return series;
-    }
-
-    /**
-     * Обрабатывает изображение и возвращает серию данных для сплайна.
-     *
-     * @param image  изображение для обработки
-     * @return       серия данных для сплайна
-     */
-    private XYChart.Series<Number, Number> processImageForSplineData(Image image) {
+        // Process the image and get data for the spline
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Спектр"); // Название серии данных
+        series.setName("Spectrum");
 
-        if (image != null && image.getPixelReader() != null) {
-            PixelReader pixelReader = image.getPixelReader();
-            int width = (int) image.getWidth();
-            int height = (int) image.getHeight();
+        PixelReader pixelReader = image.getPixelReader();
+        int width = (int) image.getWidth();
+        int height = (int) image.getHeight();
 
-            for (int x = 0; x < width; x++) {
-                double totalIntensity = 0;
-                for (int y = 0; y < height; y++) {
-                    Color color = pixelReader.getColor(x, y);
-                    double intensity = (color.getRed() + color.getGreen() + color.getBlue()) / 3.0;
-                    totalIntensity += intensity;
-                }
-                double averageIntensity = totalIntensity / height;
-                series.getData().add(new XYChart.Data<>(x, averageIntensity * 100));
+        for (int x = 0; x < width; x++) {
+            double totalIntensity = 0;
+            for (int y = 0; y < height; y++) {
+                Color color = pixelReader.getColor(x, y);
+                double intensity = (color.getRed() + color.getGreen() + color.getBlue()) / 3.0;
+                totalIntensity += intensity;
             }
+            double averageIntensity = totalIntensity / height;
+            series.getData().add(new XYChart.Data<>(x, averageIntensity * 100));
         }
 
+        // Add data to the LineChart and customize its appearance
+        chart.getData().add(series);
+        chart.setCreateSymbols(false);
+        chart.setLegendVisible(false);
+
         return series;
     }
 
     /**
-     * Импортирует данные из таблицы и визуализирует их на графике и в таблице.
-     *
-     * @param tableViewToUpdate     TableView для обновления данными
-     * @param selectedFile          выбранный файл с данными
+     * Imports data from the table and visualizes it on the chart and table.
      */
     public void importTableData(TableView<SpectralDataTable.SpectralData> tableViewToUpdate, File selectedFile) {
         if (selectedFile != null) {
@@ -111,85 +88,98 @@ public class SpectralDataVisualization {
             try (BufferedReader reader = new BufferedReader(new FileReader(selectedFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split("\\s+"); // Разделение по пробелам
+                    String[] parts = line.split("\\s+");
                     if (parts.length >= 2) {
                         try {
                             double xValue = Double.parseDouble(parts[0]);
                             double yValue = Double.parseDouble(parts[1]);
                             tableData.add(new SpectralDataTable.SpectralData(xValue, yValue));
                         } catch (NumberFormatException e) {
-                            System.err.println("Ошибка при разборе данных: " + e.getMessage());
+                            System.err.println("Error parsing data: " + e.getMessage());
                         }
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            // Обновление TableView
             tableViewToUpdate.setItems(FXCollections.observableArrayList(tableData));
+            exitVisualizationMode((Pane) tableViewToUpdate.getParent());
         } else {
-            // TODO: Обработка случая, когда файл не выбран
+            // TODO: Handle the case when no file is selected
         }
     }
 
     /**
-     * Визуализирует данные из таблицы на графике.
-     *
-     * @param currentTab   текущая вкладка
-     * @param currentChart график для обновления
-     * @param tableView    таблица с данными
+     * Visualizes data from the table on the chart.
      */
     public void visualizeFromTable(Tab currentTab, LineChart<Number, Number> currentChart, TableView<SpectralDataTable.SpectralData> tableView) {
-        // Очищаем текущий график
         currentChart.getData().clear();
 
-        // Создаем новую серию данных
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
         series.setName("Intensities");
 
-        // Извлекаем данные из каждой строки таблицы и добавляем в серию
         for (SpectralDataTable.SpectralData data : tableView.getItems()) {
             series.getData().add(new XYChart.Data<>(data.getXValue(), data.getYValue()));
         }
 
-        // Добавляем серию на график
         currentChart.getData().add(series);
-        currentChart.setCreateSymbols(false); // Отключаем отображение символов точек данных
-        currentChart.setLegendVisible(false); // Отключаем отображение легенды
+        currentChart.setCreateSymbols(false);
+        currentChart.setLegendVisible(false);
     }
 
     /**
-     * Устанавливает курсор для ImageView и добавляет линии, следующие за курсором.
-     *
-     * @param imageView ImageView для установки курсора
-     * @param currentTab текущая вкладка
-     * @param innerTabPane внутренний TabPane
+     * Sets cursor for ImageView and adds lines that follow the cursor.
      */
     public void setImageViewCursorAndLines(ImageView imageView, Tab currentTab, TabPane innerTabPane) {
-        imageView.setOnMouseEntered(event -> imageView.setCursor(Cursor.CROSSHAIR));
-        imageView.setOnMouseExited(event -> imageView.setCursor(Cursor.DEFAULT));
-
-        imageView.setOnMousePressed(event -> {
+        visualizationMousePressedHandler = event -> {
             Pane parentPane = (Pane) imageView.getParent();
             initialY = event.getY();
 
-            // Установка начальных координат для линий
             addHorizontalLine(initialY, imageView, parentPane, line1);
             addHorizontalLine(initialY, imageView, parentPane, line2);
-        });
+        };
 
-        imageView.setOnMouseDragged(event -> updateLines(event, imageView));
+        visualizationMouseDraggedHandler = event -> {
+            double currentY = event.getY();
 
-        imageView.setOnMouseReleased(event -> {
+            line1.startYProperty().unbind();
+            line1.endYProperty().unbind();
+            line1.setStartY(currentY);
+            line1.setEndY(currentY);
+
+            double oppositeY = 2 * initialY - currentY;
+            line2.startYProperty().unbind();
+            line2.endYProperty().unbind();
+            line2.setStartY(oppositeY);
+            line2.setEndY(oppositeY);
+
+            addHorizontalLine(line1.getStartY(), imageView, (Pane) imageView.getParent(), line1);
+            addHorizontalLine(line2.getStartY(), imageView, (Pane) imageView.getParent(), line2);
+        };
+
+        visualizationMouseReleasedHandler = event -> {
             Pane parentPane = (Pane) imageView.getParent();
             selectedImage = getSelectedRegionImage(imageView);
             if (selectedImage != null) {
                 updateChartWithSplineData(currentTab, selectedImage, innerTabPane);
             }
-            removeLines(parentPane);
-        });
+            exitVisualizationMode(parentPane);
+        };
+
+        imageView.addEventHandler(MouseEvent.MOUSE_PRESSED, visualizationMousePressedHandler);
+        imageView.addEventHandler(MouseEvent.MOUSE_DRAGGED, visualizationMouseDraggedHandler);
+        imageView.addEventHandler(MouseEvent.MOUSE_RELEASED, visualizationMouseReleasedHandler);
+
+        isInVisualizationMode = true;
+
+        imageView.setOnMouseEntered(event -> imageView.setCursor(Cursor.CROSSHAIR));
+        imageView.setOnMouseExited(event -> imageView.setCursor(Cursor.DEFAULT));
     }
 
+
+    /**
+     * Adds a horizontal line.
+     */
     private void addHorizontalLine(double yClick, ImageView imageView, Pane parentPane, Line line) {
         line.setStroke(Color.RED);
         line.setStrokeWidth(2);
@@ -210,32 +200,9 @@ public class SpectralDataVisualization {
         }
     }
 
-    private void updateLines(MouseEvent event, ImageView imageView) {
-        double currentY = event.getY();
-
-        // Линия, следующая за курсором
-        line1.startYProperty().unbind();
-        line1.endYProperty().unbind();
-        line1.setStartY(currentY);
-        line1.setEndY(currentY);
-
-        // Линия, движущаяся в противоположную сторону
-        double oppositeY = 2 * initialY - currentY;
-        line2.startYProperty().unbind();
-        line2.endYProperty().unbind();
-        line2.setStartY(oppositeY);
-        line2.setEndY(oppositeY);
-
-        // Обновляем биндинги, чтобы линии корректно масштабировались
-        addHorizontalLine(line1.getStartY(), imageView, (Pane) imageView.getParent(), line1);
-        addHorizontalLine(line2.getStartY(), imageView, (Pane) imageView.getParent(), line2);
-    }
-
-    private void removeLines(Pane parentPane) {
-        parentPane.getChildren().remove(line1);
-        parentPane.getChildren().remove(line2);
-    }
-
+    /**
+     * Gets the selected region of the image.
+     */
     private Image getSelectedRegionImage(ImageView imageView) {
         double y1 = line1.getStartY();
         double y2 = line2.getStartY();
@@ -266,29 +233,38 @@ public class SpectralDataVisualization {
         return null;
     }
 
-    private LineChart<Number, Number> findLineChart(Node node) {
-        Parent parent = node.getParent();
-        while (parent != null) {
-            if (parent instanceof TabPane) {
-                TabPane tabPane = (TabPane) parent;
-                Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-                if (selectedTab.getContent() instanceof LineChart) {
-                    return (LineChart<Number, Number>) selectedTab.getContent();
-                }
-            }
-            parent = parent.getParent();
+    /**
+     * Exits the visualization mode, resetting the cursor and removing lines.
+     */
+    public void exitVisualizationMode(Pane parentPane) {
+        // Удаление линий
+        parentPane.getChildren().remove(line1);
+        parentPane.getChildren().remove(line2);
+
+        if (isInVisualizationMode) {
+            parentPane.getChildren().filtered(node -> node instanceof ImageView).forEach(node -> {
+                ImageView imageView = (ImageView) node;
+
+                imageView.removeEventHandler(MouseEvent.MOUSE_PRESSED, visualizationMousePressedHandler);
+                imageView.removeEventHandler(MouseEvent.MOUSE_DRAGGED, visualizationMouseDraggedHandler);
+                imageView.removeEventHandler(MouseEvent.MOUSE_RELEASED, visualizationMouseReleasedHandler);
+
+                // Убираем обработчики для смены курсора
+                imageView.setOnMouseEntered(null);
+                imageView.setOnMouseExited(null);
+
+                imageView.setCursor(Cursor.DEFAULT);
+            });
+            isInVisualizationMode = false;
         }
-        return null;
     }
 
-    private TabPane findTabPane(Node node) {
-        Parent parent = node.getParent();
-        while (parent != null) {
-            if (parent instanceof TabPane) {
-                return (TabPane) parent;
-            }
-            parent = parent.getParent();
-        }
-        return null;
+
+    /**
+     * Enters the visualization mode by setting the cursor and adding lines.
+     */
+    public void enterVisualizationMode(ImageView imageView, Tab currentTab, TabPane innerTabPane) {
+        // Additional logic for entering visualization mode if necessary
+        setImageViewCursorAndLines(imageView, currentTab, innerTabPane);
     }
 }
