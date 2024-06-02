@@ -3,14 +3,11 @@ package com.example.funproject;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Side;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -31,12 +28,11 @@ public class HelloController {
     @FXML
     protected TabPane tabPane;
 
-
     // Вспомогательные классы
     private final FileImporter fileImporter = new FileImporter();
     protected TabManager tabManager;
-    private DataPreprocessing dataPreprocessing;
     protected SpectralDataVisualization spectralDataVisualization;
+    private SpectralDataTable spectralDataTable;
 
     // Хранилища данных
     protected Map<Tab, List<Image>> xRayImages = new HashMap<>();
@@ -54,8 +50,8 @@ public class HelloController {
     @FXML
     public void initialize() {
         tabManager = new TabManager(tabPane, imageProcessors);
-        dataPreprocessing = new DataPreprocessing();
         spectralDataVisualization = new SpectralDataVisualization();
+        spectralDataTable = new SpectralDataTable();
         imageLines = new HashMap<>();
         chartLines = new HashMap<>();
         handleNewTab();
@@ -92,10 +88,12 @@ public class HelloController {
         TableView<SpectralDataTable.SpectralData> tableViewToUpdate = spectralDataTableViews.get(currentTab);
         File selectedFile = fileImporter.importTable(mainContainer.getScene().getWindow());
 
-        // Импортируем данные из таблицы и обновляем график и таблицу
-        spectralDataVisualization.importTableData(tableViewToUpdate, selectedFile);
-    }
+        // Импортируем данные из таблицы
+        spectralDataTable.importTableData(selectedFile);
 
+        // Обновляем TableView
+        tableViewToUpdate.setItems(spectralDataTable.getTableView().getItems());
+    }
 
     /**
      * Обработка изображения.
@@ -112,25 +110,19 @@ public class HelloController {
             return;
         }
 
-        // Контекстное меню с опциями обработки
-        ContextMenu processingMenu = new ContextMenu();
-        MenuItem smoothItem = new MenuItem("Сгладить");
-        processingMenu.getItems().addAll(smoothItem);
+        // Открытие диалогового окна обработки изображения
+        ImageProcessingWindow window = new ImageProcessingWindow(selectedImage, kernelSize);
+        Image smoothedImage = window.getResultImage();
 
-        // Обработчик события сглаживания
-        smoothItem.setOnAction(e -> {
-            Image smoothedImage = dataPreprocessing.imageSmoothing(selectedImage, kernelSize);
+        if (smoothedImage != null) {
             updateImageInTab(currentTab, selectedImage, smoothedImage);
             imageProcessors.get(currentTab).selectedImage = smoothedImage;
-        });
-
-        // Отображение контекстного меню
-        processingMenu.show((Node) event.getSource(), Side.BOTTOM, 0, 0);
+        }
     }
 
-
-    //* Обновление изображения на вкладке.
-
+    /**
+     * Обновление изображения на вкладке.
+     */
     private void updateImageInTab(Tab currentTab, Image oldImage, Image newImage) {
         List<Image> currentImages = xRayImages.getOrDefault(currentTab, new ArrayList<>());
         int selectedIndex = currentImages.indexOf(oldImage);
@@ -143,7 +135,6 @@ public class HelloController {
             System.out.println("Выбранное изображение не найдено.");
         }
     }
-
 
     /**
      * Отображает контекстное меню для выбора способа визуализации спектра.
@@ -185,14 +176,11 @@ public class HelloController {
         visualizationMenu.show((Node) actionEvent.getSource(), Side.BOTTOM, 0, 0);
     }
 
-
-
     /**
      * Калибровка спектрометра.
      *
      * @param actionEvent событие, вызвавшее метод
      */
-
     public void spectrumCalibration(ActionEvent actionEvent) {
         // Выбранная вкладка
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
@@ -212,14 +200,12 @@ public class HelloController {
         new CalibrationDialog(selectedTab, lineImageInfos, lineChartInfos, currentChart, tableViewToUpdate);
     }
 
-
     /**
      * Экспортирует данные из таблицы текущей вкладки в текстовый файл.
      * Данные сохраняются в формате "длина волны пробел интенсивность".
      *
      * @param actionEvent Событие, вызвавшее метод.
      */
-
     public void exportTables(ActionEvent actionEvent) {
         // Получить текущую вкладку
         Tab currentTab = tabPane.getSelectionModel().getSelectedItem();

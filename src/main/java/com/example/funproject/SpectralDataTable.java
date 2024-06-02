@@ -7,6 +7,11 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SpectralDataTable {
@@ -24,11 +29,40 @@ public class SpectralDataTable {
         );
     }
 
-    // Убрали параметр типа T
     private TableColumn<SpectralData, Number> createColumn(String title, String propertyName) {
         TableColumn<SpectralData, Number> column = new TableColumn<>(title);
         column.setCellValueFactory(new PropertyValueFactory<>(propertyName));
         return column;
+    }
+
+    /**
+     * Импортирует данные из файла и обновляет TableView.
+     */
+    public void importTableData(File selectedFile) {
+        if (selectedFile == null) {
+            // TODO: Обработка случая, когда файл не выбран
+            return;
+        }
+
+        List<SpectralData> tableData = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(selectedFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\s+");
+                if (parts.length >= 2) {
+                    try {
+                        double xValue = Double.parseDouble(parts[0]);
+                        double yValue = Double.parseDouble(parts[1]);
+                        tableData.add(new SpectralData(xValue, yValue));
+                    } catch (NumberFormatException e) {
+                        System.err.println("Ошибка при разборе данных: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        tableView.setItems(FXCollections.observableArrayList(tableData));
     }
 
     public static void updateTableViewInTab(Tab tab,
