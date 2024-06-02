@@ -42,9 +42,9 @@ public class SpectralDataVisualization {
     }
 
     /**
-     * Updates the LineChart based on the spline data derived from the image.
+     * Updates the LineChart and TableView based on the spline data derived from the image.
      */
-    public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab, Image image, TabPane innerTabPane) {
+    public XYChart.Series<Number, Number> updateChartWithSplineData(Tab tab, Image image, TabPane innerTabPane, TableView<SpectralDataTable.SpectralData> tableView) {
         if (innerTabPane == null || image == null) return null;
 
         Tab currentTab = innerTabPane.getSelectionModel().getSelectedItem();
@@ -60,6 +60,8 @@ public class SpectralDataVisualization {
         int width = (int) image.getWidth();
         int height = (int) image.getHeight();
 
+        List<SpectralDataTable.SpectralData> tableData = new ArrayList<>();
+
         for (int x = 0; x < width; x++) {
             double totalIntensity = 0;
             for (int y = 0; y < height; y++) {
@@ -69,14 +71,23 @@ public class SpectralDataVisualization {
             }
             double averageIntensity = totalIntensity / height;
             series.getData().add(new XYChart.Data<>(x, averageIntensity * 100));
+            tableData.add(new SpectralDataTable.SpectralData(x, averageIntensity * 100));
         }
 
-        // Add data to the LineChart and customize its appearance
-        chart.getData().add(series);
-        chart.setCreateSymbols(false);
-        chart.setLegendVisible(false);
+        // Update the table with the new data
+        updateTableWithSplineData(tableView, tableData);
+
+        // Visualize data from the updated table
+        visualizeFromTable(tab, chart, tableView);
 
         return series;
+    }
+
+    /**
+     * Updates the TableView with the new spline data.
+     */
+    public void updateTableWithSplineData(TableView<SpectralDataTable.SpectralData> tableView, List<SpectralDataTable.SpectralData> tableData) {
+        tableView.setItems(FXCollections.observableArrayList(tableData));
     }
 
     /**
@@ -130,7 +141,7 @@ public class SpectralDataVisualization {
     /**
      * Sets cursor for ImageView and adds lines that follow the cursor.
      */
-    public void setImageViewCursorAndLines(ImageView imageView, Tab currentTab, TabPane innerTabPane) {
+    public void setImageViewCursorAndLines(ImageView imageView, Tab currentTab, TabPane innerTabPane, TableView<SpectralDataTable.SpectralData> tableView) {
         visualizationMousePressedHandler = event -> {
             Pane parentPane = (Pane) imageView.getParent();
             initialY = event.getY();
@@ -161,7 +172,7 @@ public class SpectralDataVisualization {
             Pane parentPane = (Pane) imageView.getParent();
             selectedImage = getSelectedRegionImage(imageView);
             if (selectedImage != null) {
-                updateChartWithSplineData(currentTab, selectedImage, innerTabPane);
+                updateChartWithSplineData(currentTab, selectedImage, innerTabPane, tableView);
             }
             exitVisualizationMode(parentPane);
         };
@@ -175,7 +186,6 @@ public class SpectralDataVisualization {
         imageView.setOnMouseEntered(event -> imageView.setCursor(Cursor.CROSSHAIR));
         imageView.setOnMouseExited(event -> imageView.setCursor(Cursor.DEFAULT));
     }
-
 
     /**
      * Adds a horizontal line.
@@ -237,7 +247,6 @@ public class SpectralDataVisualization {
      * Exits the visualization mode, resetting the cursor and removing lines.
      */
     public void exitVisualizationMode(Pane parentPane) {
-        // Удаление линий
         parentPane.getChildren().remove(line1);
         parentPane.getChildren().remove(line2);
 
@@ -249,7 +258,6 @@ public class SpectralDataVisualization {
                 imageView.removeEventHandler(MouseEvent.MOUSE_DRAGGED, visualizationMouseDraggedHandler);
                 imageView.removeEventHandler(MouseEvent.MOUSE_RELEASED, visualizationMouseReleasedHandler);
 
-                // Убираем обработчики для смены курсора
                 imageView.setOnMouseEntered(null);
                 imageView.setOnMouseExited(null);
 
@@ -259,12 +267,10 @@ public class SpectralDataVisualization {
         }
     }
 
-
     /**
      * Enters the visualization mode by setting the cursor and adding lines.
      */
-    public void enterVisualizationMode(ImageView imageView, Tab currentTab, TabPane innerTabPane) {
-        // Additional logic for entering visualization mode if necessary
-        setImageViewCursorAndLines(imageView, currentTab, innerTabPane);
+    public void enterVisualizationMode(ImageView imageView, Tab currentTab, TabPane innerTabPane, TableView<SpectralDataTable.SpectralData> tableView) {
+        setImageViewCursorAndLines(imageView, currentTab, innerTabPane, tableView);
     }
 }

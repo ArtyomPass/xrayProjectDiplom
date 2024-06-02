@@ -164,10 +164,11 @@ public class HelloController {
         MenuItem imageBasedItem = new MenuItem("Визуализировать по изображению");
         imageBasedItem.setOnAction(e -> {
             ImageView imageView = imageProcessors.get(currentTab).imageView;
+            TableView<SpectralDataTable.SpectralData> tableView = spectralDataTableViews.get(currentTab);
             if (spectralDataVisualization.isInVisualizationMode) {
                 spectralDataVisualization.exitVisualizationMode((Pane) imageView.getParent());
             } else {
-                spectralDataVisualization.enterVisualizationMode(imageView, currentTab, currentInnerTabPane);
+                spectralDataVisualization.enterVisualizationMode(imageView, currentTab, currentInnerTabPane, tableView);
             }
         });
 
